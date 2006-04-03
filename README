@@ -1,0 +1,90 @@
+Warlock README
+---------------
+
+The goal of warlock is to provide a pleasant experience for playing Dragonrealms
+while using GNU/Linux. If we can also support other MUDs, particularly other
+Simutronics MUDs, this is a bonus.
+
+If you need info about installing warlock, please read the INSTALL file.
+If you'd like to take a look at the new features in warlock, please read the
+NEWS file.
+
+If you would like to contact us, please look at the contact page on our
+web site for more details.
+
+Thanks for trying out client,
+The Warlock Team
+
+Scripting
+----------
+
+We support two types of scripting. We have near 100% compatibility with Wizard
+script (but no plans to support Stormfront scripts), and we have our own
+Python scripting engine. If you are writing a script from scratch, I recommend
+you use the Python option. If you find any problems with out Wizard script
+compatibility, please let us know.
+
+Highlights
+-----------
+
+Our highlights are much more powerful than highlights in the Wizard. They are
+regex based. The string you enter is a Perl-compatible regex. Please view
+man 3 pcrepattern for more details on creating patterns (You must have libpcre
+installed to use our program, so this man page should also be installed).
+
+Using Patterns in Our System
+
+Our highlights use the matches from the regex. When you edit the colors, the top
+colors, labeled "all" are the entire string that matches. For example if you
+had the pattern "goblin" (without the quotes) and you set the foreground color
+of the all row to green, whenever the text "goblin" showed up, it would be
+highlighted green. If you wanted to make sure that "goblin" was the full word,
+you should use the pattern "\bgoblin\b" then strings such as "goblins" would
+not be matched by this pattern.
+
+Suppose you wanted to have a special pattern, where only part of it was
+highlighted. To do this you can use the matches from the regex (read the man
+pages for more details on this). Say I wanted to highlight "goblin" but only
+when it was preceded by "field". To do this I would create the pattern
+"\bfield (goblin)\b" and I would set the second row of colors to green (if I 
+wanted the word "goblin" to appear in green). The parentheses tell the regex
+parser that the contents are a match. The row labeled "1" is the first such
+match. The row labeled "2" is the second, etc.
+
+Python Scripting
+-----------------
+
+Your python scripts are executed by the python interpreter as normal python
+scripts are. We have a built-in module called "warlock" which you should import
+and use. It included functions for interacting with the client. I'm not going
+to document all of them here. Somewhere in pyscript.c is a complete list.
+The most important ones are addCallback, removeCallback, put, wait, nextRoom,
+and waitRT. The latter four do the same things as their Wizard script counter-
+parts. addCallback takes one argument, which should be a function that takes
+a string as a parameter. Whenever Warlock receives a line from the server,
+it will call your function and pass it that line. For an idea of how to use
+this, please see pywarlock.py in the scripting directory. removeCallback takes
+the same type of parameter as addCallback, but it will stop your function from
+receiving lines. removeCallback return True on success and False on failure.
+
+You can run as many python scripts concurrently as you please. You will be
+shown a list of ID's of currently running scripts before the command prompt.
+In the future you will be able to pause or stop a particular script.
+
+Wizard Scripting
+-----------------
+
+We haven't implemented user variables yet such as %container, etc. If you find
+any other bugs or missing features, please let us know.
+
+Macros
+-------
+
+Macros are compatible with Wizard macros. The only addition is \S to save the
+current contents of the entry and \R to restore a previously saved entry. We
+have not implemented the {rest} command, or any of those. The {copy}, etc. are
+not needed with Warlock. Any GTK hotkeys are over-ridden by user defined
+macros, but if there is no user defined macro for that key, it will be passed
+through to GTK. We have not implemented \a. In the dialog, press any key
+combination. If there is some modifier that is being treated as a key by
+itself, please let us know.

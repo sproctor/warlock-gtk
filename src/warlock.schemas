@@ -1,0 +1,360 @@
+<gconfschemafile>
+  <schemalist>
+    <schema>
+      <key>/schemas/apps/warlock/window-size</key>
+      <applyto>/apps/warlock/window-width</applyto>
+      <applyto>/apps/warlock/window-height</applyto>
+      <owner>warlock</owner>
+      <type>int</type>
+      <default>400</default>
+      <locale name="C">
+        <short>Dimensions of the window</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/editor</key>
+      <applyto>/apps/warlock/Default/editor</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>gvim %s</default>
+      <locale name="C">
+        <short>Editor to use for editing scripts</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/echo</key>
+      <applyto>/apps/warlock/Default/echo</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>Echo commands locally</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/auto-sneak</key>
+      <applyto>/apps/warlock/Default/auto-sneak</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>Automatically sneak when hidden</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/show-arrivals</key>
+      <applyto>/apps/warlock/Default/show-arrivals</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Show only arrivals that match a name</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/script-prefix</key>
+      <applyto>/apps/warlock/Default/script-prefix</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>.</default>
+      <locale name="C">
+        <short>Command prefix to run scripts</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/text-buffer-size</key>
+      <applyto>/apps/warlock/Default/text-buffer-size</applyto>
+      <owner>warlock</owner>
+      <type>int</type>
+      <default>1000000</default>
+      <locale name="C">
+        <short>Maximum size (in characters) of each text view</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/command-size</key>
+      <applyto>/apps/warlock/Default/command-size</applyto>
+      <owner>warlock</owner>
+      <type>int</type>
+      <default>3</default>
+      <locale name="C">
+        <short>Minimum command size to add to history</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/command-history-size</key>
+      <applyto>/apps/warlock/Default/command-history-size</applyto>
+      <owner>warlock</owner>
+      <type>int</type>
+      <default>100</default>
+      <locale name="C">
+        <short>Maximum size of the command history</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/command-history</key>
+      <applyto>/apps/warlock/Default/command-history</applyto>
+      <owner>warlock</owner>
+      <type>list</type>
+      <list_type>string</list_type>
+      <locale name="C">
+        <short>Command history</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/default-text-color</key>
+      <applyto>/apps/warlock/Default/default-text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>light gray</default>
+      <locale name="C">
+        <short>Default text color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/default-background-color</key>
+      <applyto>/apps/warlock/Default/default-background-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>black</default>
+      <locale name="C">
+        <short>Default background color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/default-font</key>
+      <applyto>/apps/warlock/Default/default-font</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>monospace 9</default>
+      <locale name="C">
+        <short>Default font</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/title-text-color</key>
+      <applyto>/apps/warlock/Default/title-text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>white</default>
+      <locale name="C">
+        <short>Title text color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/title-background-color</key>
+      <applyto>/apps/warlock/Default/title-background-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>title background color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/title-font</key>
+      <applyto>/apps/warlock/Default/title-font</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>title font</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/monster-text-color</key>
+      <applyto>/apps/warlock/Default/monster-text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>yellow</default>
+      <locale name="C">
+        <short>monster text color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/monster-background-color</key>
+      <applyto>/apps/warlock/Default/monster-background-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>monster background color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/monster-font</key>
+      <applyto>/apps/warlock/Default/monster-font</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>Monster font</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/echo-text-color</key>
+      <applyto>/apps/warlock/Default/echo-text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>Echo text color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/echo-background-color</key>
+      <applyto>/apps/warlock/Default/echo-background-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>echo background color.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/echo-font</key>
+      <applyto>/apps/warlock/Default/echo-font</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <locale name="C">
+        <short>echo font</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/script-path</key>
+      <applyto>/apps/warlock/Default/script-path</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>.warlock/scripts</default>
+      <locale name="C">
+        <short>Path to scripts</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/log-path</key>
+      <applyto>/apps/warlock/Default/log-path</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>.warlock/logs</default>
+      <locale name="C">
+        <short>Default path to logs</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/arrival-window</key>
+      <applyto>/apps/warlock/Default/arrival-window</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>Whether to show the arrival window.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/thought-window</key>
+      <applyto>/apps/warlock/Default/thought-window</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Whether to show the thought window.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/death-window</key>
+      <applyto>/apps/warlock/Default/death-window</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Whether to show the death window.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/familiar-window</key>
+      <applyto>/apps/warlock/Default/familiar-window</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Whether to show the arrival window.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/index</key>
+      <applyto>/apps/warlock/Default/highlights/index</applyto>
+      <owner>warlock</owner>
+      <type>list</type>
+      <list_type>int</list_type>
+      <default>[1,2]</default>
+      <locale name="C">
+        <short>List of highlights in order</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000001/string</key>
+      <applyto>/apps/warlock/Default/highlights/000001/string</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>^(.+ (say|says|ask|asks|exclaim|exclaims|belt out|yells)( .+)?,) ".+"$</default>
+      <locale name="C">
+        <short>Highlight for speech.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000001/1/text-color</key>
+      <applyto>/apps/warlock/Default/highlights/000001/1/text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>#0000FFFF0000</default>
+      <locale name="C">
+        <short>text info for speech</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000001/case-sensitive</key>
+      <applyto>/apps/warlock/Default/highlights/000001/case-sensitive</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>case sensitive speech</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000002/string</key>
+      <applyto>/apps/warlock/Default/highlights/000002/string</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>^(.+ whispers( .+)?,) ".+"$</default>
+      <locale name="C">
+        <short>text march for whispers</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000002/1/text-color</key>
+      <applyto>/apps/warlock/Default/highlights/000002/1/text-color</applyto>
+      <owner>warlock</owner>
+      <type>string</type>
+      <default>#0000FFFFFFFF</default>
+      <locale name="C">
+        <short>text color for whispers</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/highlights/000002/case-sensitive</key>
+      <applyto>/apps/warlock/Default/highlights/000002/case-sensitive</applyto>
+      <owner>warlock</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>case sensitive whispers</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/warlock/Default/macros</key>
+      <applyto>/apps/warlock/Default/macros</applyto>
+      <owner>warlock</owner>
+      <type>list</type>
+      <list_type>string</list_type>
+      <default>[a 8 attack ,l 8 \\S\\xlook in my backpack\\r\\R,o 8 open ,p 8 put @ in my backpack,t 8 take @ from my backpack,g 4 \\S\\xget \\? \\rput \\? in my backpack\\r\\R,KP_Up 0 \\S\\xn\\r\\R,KP_Down 0 \\S\\xs\\r\\R,KP_Right 0 \\S\\xe\\r\\R,KP_Left 0 \\S\\xw\\r\\R,KP_Page_Up 0 \\S\\xne\\r\\R,KP_Page_Down 0 \\S\\xse\\r\\R,KP_End 0 \\S\\xsw\\r\\R,KP_Begin 0 \\S\\xout\\r\\R,KP_Home 0 \\S\\xnw\\r\\R,KP_Insert 0 \\S\\xdown\\r\\R,KP_Delete 0 \\S\\xup\\r\\R,KP_Divide 0 \\S\\xhealth\\r\\R,KP_Multiply 0 \\S\\xnotoriety\\r\\R,KP_Subtract 0 \\S\\xskills\\r\\R,KP_Add 0 \\S\\xlook\\r\\R,KP_Insert 4 \\S\\xpeer down\\r\\R,KP_End 4 \\S\\xpeer sw\\r\\R,KP_Down 4 \\S\\xpeer s\\r\\R,KP_Page_Down 4 \\S\\xpeer se\\r\\R,KP_Left 4 \\S\\xpeer w\\r\\R,KP_Begin 4 \\S\\xpeer out\\r\\R,KP_Right 4 \\S\\xpeer e\\r\\R,KP_Home 4 \\S\\xpeer nw\\r\\R,KP_Up 4 \\S\\xpeer n\\r\\R,KP_Page_Up 4 \\S\\xpeer ne\\r\\R,KP_Delete 4 \\S\\xpeer up\\r\\R]</default>
+      <locale name="C">
+        <short>List of macros</short>
+      </locale>
+    </schema>
+  </schemalist>
+</gconfschemafile>

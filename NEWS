@@ -1,0 +1,191 @@
+NEWS for Warlock:
+-----------------------
+
+0.5-pre4 (2005 Nov 10):
+	- handle unconscious state
+	- Implemented logging (normal and automatic)
+	- Fix up javascript a little
+	- Allow compilation w/o javascript
+
+0.5-pre3:
+	- fix include left as error.h in pre2
+	- moved about dialog to glade file
+	- changed protocol lexer to do a little more work for us
+
+0.5-pre2:
+        - fixed warnings showing up in GCC 4.0
+        - fixed a segfault when compiled with GCC 4.0 when viewing a room
+          with no exits (GCC 4.0 exposed the bug)
+        - fixed issue with % in entry string
+        - don't auto-sneak/drag in scripts
+        - update spidermonkey autoconf section
+        - implement maximum command history size
+        - implement maximum buffer size
+	- rewrote script lexer/parser to be a little simpler and to use start
+	  conditions instead of matching the beginnings of lines (should
+	  allow us to expand things a little more, and should run a little
+	  faster)
+
+0.5-pre1:
+        - fixed a segfault hitting escape after pausing a script
+        - hitting a escape when a script is paused resumes the script
+        - added invisible and mute icons
+        - moved history into gconf
+        - removed python scripting in favor of JavaScript
+        - added support for ; for comments in wizard scripts
+        - up GTK+ version requirement to 2.6
+        - switched command line parsing to GOption
+        - moved about dialog to GtkAboutDialog from custom glade
+        - handle billing issue response from SGE
+
+0.4:
+        - added ability to pause python scripts
+        - redirect python stderr/stdout to the screen
+
+0.4-rc2:
+        - fix executing scripts from the menu
+        - fix some deadlock conditions in scripts
+        - add up, down and out to sneak directions
+        - remove python prefix. load python scripts with normal script prefix
+        - add a lot more functionality to python scripts
+
+0.4-rc1:
+        - added an edit button to the profile dialog
+        - made color/font widgets with check boxes to disable them
+        - used these widgets in preferences and highlights
+        - parse .sal files from websites.
+        - added default macros
+        - fixed some bugs
+        - add some other minor features
+
+0.4-pre5:
+        - redid connection dialog
+        - added \S and \R to macros for saving the current entry, and restoring
+          a saved entry
+        - make wait and waitfor waitfor end of roundtime. make waitfor wait for
+          a prompt after getting the string
+        - impelement connect/disconnect options.
+        - display an error message rather than dying on unrecognized GS code
+          or status code
+
+0.4-pre4:
+        - handle more codes not used in DR
+        - clean up highlights interface
+        - reverse the order of highlight application
+        - make scripts more compatible with wizard scripts
+        - fix a few race conditions in scripting
+        - implement counter in scripts
+        - and labelerror
+
+0.4-pre3:
+        - handle some codes not used in DR, but used in GS
+        - fix intermitent warnings in roundtime code
+        - fix some warnings in script code
+        - fix some bugs with handling of variables in scripts
+        - add support for macros
+        - add support for thoughts window
+
+0.4-pre2
+        - fix some bugs with gconf on FC2
+        - fix a bug that would cause scripts to read one more line than they
+          should have
+
+0.4-pre1
+        - keep window open on disconnect
+        - integrate SGE functionality into warlock
+        - shift-escape pauses and resumes scripts
+        - move preferences to glade
+
+0.3
+        - fix some gconf install problems
+        - make the menu remember the state of arrival window, etc
+        - rewritten highlight modification system
+        - improved the handling of game time/round times
+        - implement correct handling of items in hand... this is a retarded
+          protocol for any who didn't know that yet.
+        - switch from posix regex to perl regex for highlights
+        - implement nextRoom and save in scripts
+
+0.3-rc3
+        - fix executable path in druid
+
+0.3-rc2:
+        - Re-enable druid
+        - fix a minor typo causing a major problem running warlock
+
+0.3-rc1:
+
+        - port to GTK2 and autoconf and libglade and gconf
+	- Support regex in string highlighting
+	- garbage collection using libgc
+        - moved over to glade for designing UI
+        - rewritten scripting (moved to lex/yacc)
+        - rewritten protocol parser (moved to lex/yacc)
+	- a lot of code cleaning and breaking
+
+0.3pre4:
+
+	Need to find what was changed for this release
+
+0.3pre3:
+
+	This is the 3rd alpha release for warlock 0.3.
+
+	New Stuff:
+
+	- Custom String Highlighting!! (Check the Strings Tab under
+	Preferences>Palette)
+	- Multiple Character Profile Support (different configurations for each
+	character)
+	- Font configuration
+	- Stopping scripts is supported through the menu and the Escape key
+	- Scripting acts more like the Wizard.
+	- Greatly Improved Speed.
+	- Stability slightly improved.
+
+	Bug Fixes:
+
+	- NPC bug finally squashed!
+	- command history should work properly (for good this time)
+
+0.3pre2:
+
+	This is the 2nd alpha release for warlock 0.3.
+
+	New Stuff:
+
+	- Color Palette editing (cool!)
+	- Improved Scripting support
+	- All of warlock's files reside in the users home directory
+	- Installation script
+	- Included auto-launch script for logging in through the dragonrealms
+	webpage
+	- Hands have images now (tell me what you think?)
+	- Roundtime bar moved
+	- Preliminary Reverse Engineering of the Simutronics Game Entrance(SGE)
+	check out SGE-INFO if your interested in helping :)
+
+	Bug Fixes:
+
+	- Pesky "Extra Line" bug with room titles fixed.
+	- Command History should work properly now.
+	- A small fix for NPCs.. still not 100% fixed (working on it).
+	- Roundtime "overload" bug squashed.
+	- Window was starting up pretty small.. it's a little bigger now :).
+	- Game Window actually scrolls now
+	- Room Descriptions were displaying an "I" at the end.. all better.
+	- The images all had white backgrounds.. now they're all transparent.
+
+
+0.3pre1:
+
+	This is the alpha release for warlock.. 
+
+	Features:
+
+	- Game playability(it's actually possible to play)
+	- color coded Talking, whispering, yelling, NPC's, rooms
+	- very preliminary support for scripts (only a few commands allowed)
+	- command history working (not quite right though)
+	- macros working fully
+	- status bar, roundtime, compass, and hands working

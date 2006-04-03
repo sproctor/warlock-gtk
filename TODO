@@ -1,0 +1,64 @@
+Warlock TODO
+------------
+
+For 0.5
+
+- have system messages get their own tag
+
+Maybe 0.5
+- get javascript working
+- support for names
+- search text view for some text
+- implement triggers
+- Figure out what U is
+
+Future
+
+- make arrival, etc remember their size and position
+- save last selected profile in gconf
+
+- make start script, pause script, last command, etc macros. remove the
+  hard-coded keys
+- {scriptlet} macro command. switches entry into a script reader. you type
+  script code and it interprets the code as you type it, pausing when it needs
+  more code. hitting the macro again should switch back, but not clear the
+  script. hit escape to end the script.
+- navigation with compass
+- implement \a for macros
+
+- move images to png or svg files and make them prettier
+- force close after some time when the close button is clicked
+- squelch lines; also, allow users to define windows and send text to them.
+  this can replace the way thoughts, arrivals, etc works.
+- implement interface for showing poison/disease
+
+- be able to create a new character through SGE
+- redo profile dialog to show what is happening, not the entry stuff when
+  connecting/doing the next step. whichever.
+- back button in SGE interface
+- support telnet-based muds
+
+- support stormfront protocol
+- port to windows
+- per character preferences/highlights
+- support multiple connections at once through tabs
+- support importing preferences from the wizard
+- Allow recording of scripts
+- implement aliases http://ytin.sourceforge.net/cgi-bin/help.pl/ytin?alias
+- add sync function from wizard
+
+Possible:
+
+- support multiple wizard scripts at once
+- implement call/return for scripts.
+- ThreadCall label name: starts a thread at the label, identified by name.
+- ThreadStop name, ThreadPause name, ThreadResume name, etc work on that thread
+- implement DRConnect scripts: http://www.dr-connect.zinious.com/
+- Import Wizard Configuration
+- EXP Calculator (maybe?)
+
+--------------------------------------------------
+if you have a feature request that isn't listed in this file, feel free
+to post the request in the Feature Requests part of
+
+	http://sourceforge.net/projects/warlock

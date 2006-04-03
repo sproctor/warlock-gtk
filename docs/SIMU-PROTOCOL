@@ -1,0 +1,185 @@
+*** Original file taken from the Elmekia front end
+*** http://anime.sigfs.org/elmekia/
+
+*** Notes added by Chris Schantz and Marshall Culpepper
+*** These codes may or may not be right, believe them at your own risk :)
+
+Things I have discovered about logging into the Simutronics game(s):
+
+If you log into 198.83.208.169 [chimera-208.simutronics.com] and send the
+following:
+
+*** Substitute the IP of the game you play, for Dragonrealms it is
+*** 198.83.208.176, port 4901
+
+<key>\n
+<key>\n              <-- \n == newline
+
+*** You only need to send the key once, just a plain newline for the second
+*** line works fine
+
+...turns off status strings... but...
+
+If you log into 198.83.208.169 [chimera-208.simutronics.com] and send the 
+following:
+
+<key>\n
+/FE:WIZARD /VERSION:2.02 /P:WIN32\n       <-- \n == newline
+GOOD\n
+
+*** You only need to send /FE:WIZARD\n
+*** anything else is just to tell the game what client/platform is connecting
+
+...this will turn on status strings to the client.  Status strings consist
+ of a new line and then ^\GSxxxxxxxx where the x(s) is some number of
+characters.
+
+Some of the strings I have figured out are:
+
+^\GSm<string> - What is contained in your right hand.
+^\GSl<string> - What is contained in your left hand.
+These codes are sent with 45 characters. these 45 characters should be broken
+into 3 sections of 15. each section is padded with spaces at the end, to fill
+out the 15 characters. if no spaces are needed, none are added.
+
+^\GSj<string> - The string will consist of the characters A-K, where each 
+letter means the following:
+ A - North
+ B - Northeast
+ C - East
+ D - Southeast
+ E - South
+ F - Southwest
+ G - West
+ H - Northwest
+ I - Up
+ J - Down
+ K - Out
+
+ Also - this signifies the end of the items in a room, and the beginning of the "Obvious exits" section
+
+^\GSX<number> - The amount of hit points you currently have.
+              - The first digit can be '-', indicating negative hit points.
+*** Not used in Dragonrealms
+
+^\GSY<number> - The number of spirit points you currently have.
+*** Not used in Dragonrealms
+
+^\GSZ<10 digit number> - The amount of mana you currently have.
+              - The first digit can be '-', indicating negative mana.
+*** Not used in Dragonrealms
+
+^\GSg<10 digit number> - Current stance.
+ <number> == 000 - Offensive Stance
+ <number> == 020 - Advanced Stance
+ <number> == 040 - Forward Stance
+ <number> == 060 - Neutral Stance
+ <number> == 080 - Guarded Stance
+ <number> == 100 - Defensive Stance
+*** Not used in Dragonrealms
+
+^\GSP<string> - status codes
+ B - ?
+ C - Webbed
+ G - Lying down
+ H - Sitting
+ GH - Kneeling
+ I - Stunned
+ K - Sleeping?
+ M - ?
+ N - Hidden
+ O - Bleeding?
+ P - Joined to someone
+ T - Spell RT?
+ U - ???Bandaged???
+ W - Dead
+
+^\GSJ<number> - Get this when poisoned
+ex. GSJ000000736100000000060000000001
+there are three 10-digit numbers. the first one is unknown significance,
+the second one is the amount of damage per round, and the third one is the rate
+of dissipation.
+
+^\GSw00003 - Sequence that shows up before a death.
+^\GSw00004 - Sequence that shows up after a death.
+*** These 2 tell the client that anything between them is a death and should 
+    be displayed in the deaths window
+
+^\GSa<number sequence> - Wounds/Severity?
+
+^\GSb<number sequence> - Scars/Severity?
+
+^\GSt - ?
+*** seems to be sent whenever the items in your hands are changed (GSl and GSm
+    codes)
+
+^\GSrA - ?
+from gemstone, not used in DR. I have no idea what it means.
+
+^\GSQ<string> - when the round time ends.
+^\GSq<string> - the current time
+
+*** These are used to setup the times for the roundtime graphical display.
+*** If a GSQ is sent, then the roundtime is initiated.
+*** To get the roundtime, you take the string from the GSQ and subtract the
+*** next GSq string from it, ie.
+*** ^\GSQ0972325053
+*** ^\GSq0972325047
+*** 0972325053 - 0972325047 = a roundtime of 6 seconds
+
+*** The GSq code also tells the wizard to display the prompt "\n>"
+
+^\GSA<string> - ? - maybe initial setting of ^\GSq<string>...
+                    Has been seen with, and without the game name at the end.
+                    Only seen at login.
+*** I get a ^\GSB before this at login as well... weird.  -Sean
+
+^\GSD - get this at login, don't have any idea. -Sean
+
+^\GSn<string> - Spell being prepared.
+
+^\GSB<number><name> - Don't know what the <number> is, but <name> seems to
+                      be the characters first name...
+                      Only seen at login.
+                      wizard sends "GOOD\n" in response to this.
+
+^\GSV<really long number> - Tons of status info, maybe?  The number is really
+                           long.
+                           Only seen at login.
+
+^\GSF<character><number> - Character has been seen to be B, M, and P - the
+                           number has always been a long string of zeroes.
+                           Only seen at login.
+*** From what I have seen in Dragonrealms, the number has always been a string
+*** of 10 zeroes.
+*** Also, I have noticed that this code appears just before you enter a room,
+*** and all 3 codes (GSFB, GSFM, GSFP) consistently appear together, in that
+*** order.
+*** Code GSFP is also sent when you "look" at a critter.
+*** I'm thinking it is the code sent to display a picture.
+
+^\GSL - monster bold highlight start
+
+^\GSM - monster bold highlight end
+
+^\GSC - Seen when you quit the game.
+*** This tells the wizard to exit
+
+^\GSo - ? - Seen before room title
+*** I assume this is used to set the textcolor to White? I could be wrong.
+*** Also used for the 'move' command in scripting
+
+^\GSp - ? - Seen after room title
+*** I assume this is used to set the textcolor back to the default, once again
+*** I could be wrong.
+
+^\GSH - ? - Seen after room title
+*** This tells you that the room description is coming next
+
+^\GSI - ? - Seen after room description (seperator between room and items?)
+*** This seperates the room description and the items on the ground. However,
+*** this follows the description directly, there is no newline between them.
+
+^\GSW - ? - Seen when status changes with bleeders
+
+^\GSc, ^\GSe - This seems to initialize the Familiar/Wounds window and ^\GSd, ^\GSf seems to finish it (maybe?)

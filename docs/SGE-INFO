@@ -1,0 +1,88 @@
+Here's how SGE communicates with the servers.
+
+the login server is eaccess.play.net on port 7900
+
+First they send a line about what version they're using something like:
+
+AL4334 SGE16 1 14
+
+I don't know what most of this means.
+The server sends back "CURRENT", or I'm assuming something different if we
+aren't using the newest SGE. This doesn't matter to us.
+
+Next SGE sends a single line (note: a line ends with "\n") consisting of "K"
+
+the simu server responds with a hash string (it will be exactly 32 chars long), which you will encrypt the password with (I think the hash is always 7-bit
+ASCII)
+
+Encryption:
+----------
+here is a basic encryption function:
+char *sge_encrypt_password (char *passwd, char *hash)
+{
+        int i;
+        char *final;
+
+        final = g_new (char, 33);
+        for (i = 0; i < 32 && passwd[i] != '\0' && hash[i] != '\0'; i++) {
+                final[i] = (char)((hash[i] ^ (passwd[i] - 32)) + 32);
+        }
+        final[i] = '\0';
+
+        return final;
+}
+
+next, SGE sends a single line, consisting of the char 'A', the account name,
+and the encrypted password seperated by a tabs (denoted by \t)
+ex. A\tproctors1\t....\n
+
+next, the server will send back a line starting with 'A', and some extra junk.
+A\tACCOUNTNAME\tKEY\tkey\tName Of User\n
+or A\t\tPASSWORD\n on an invalid password
+or A\t\tNORECORD\n on an invalid user name
+
+next SGE sends M\n
+
+the server responds with a list of games M\tCS\tCyberstrike \tDR\tDragonRealms\tDRDT\tDragonRealms Dev Test\t... etc.
+
+next SGE sends N\tCS\n
+
+the server responds with information about that game N\tPRODUCTION|WIN95_ONLY\n
+
+repeat this step for all games.
+
+next SGE sends a line F\tDR\n or with whatever game code was last used.
+
+the server responds with F\tNORMAL\n I have no idea what this exchange is for.
+
+next, SGE sends 'G' , and the game selected to play.(seperated by tab)
+ex. G\tDR\n
+
+next, the server will send a line starting with 'G' with other info
+G\tGameName\tNORMAL\t0\t\tROO=...\tMKTG=... etc
+
+Next SGE sends P and a gamecode ex: P\tDR\n
+
+the server reponse with P\t and god knows what
+
+next, SGE sends a single line with 'C' C\n
+
+next, the server will send a line beginning with C and a list of the
+characters, and their character codes.
+ex. C\t3\t3\t0\t0\CHAR_CODE\tCharacter Name\t...
+
+everything is seperated by tab, and the first 4 values after the C are useless
+if anyone knows exactly what these mean. I imagine they're characters,
+character slots, then no idea what the 0's are for.
+
+next, SGE will send 'L', the character code, and PLAY, all seperated by tab:
+ex. L\tW_PROCTORS1_A003\tPLAY\n
+
+next, the server will send a line beginning with 'L', and has all the necessary information for warlock/the wizard
+ex. L\tOK\tUPPORT=5535\tGAME=WIZ\tGAMECODE=DR\tFULLGAMENAME=Wizard Front End\tGAMEFILE=WIZARD.EXE\tGAMEHOST=dr.simutronics.net\tGAMEPORT=4901\tKEY=29146988ad04cd375f52fd398e23960d\n
+
+The key here should be 32 characters and the same as the one received after the
+A code.
+
+Hope this was helpful :)
+-marshall and Sean

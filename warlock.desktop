@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Warlock
+GenericName=Simutronics Front End
+Comment=Warlock Front End a play.net compatable client for Linux
+Exec=warlock
+Icon=warlock_icon.png
+StartupNotify=true
+Terminal=false
+Type=Application
+Categories=Application;Game;Adventure;

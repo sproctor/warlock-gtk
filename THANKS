@@ -1,0 +1,18 @@
+The Warlock Team would like to thank in no particular order:
+
+- Chris Schantz for having the original idea to write a
+  graphical dragonrealms frontend for linux. warlock 0.1 and 0.2
+  were his creations.
+
+- The author of the now deceased Elmekia Frontend (name?)
+  for providing us with a very good start (SIMU-PROTOCOL)
+  on parsing the GS protocol.
+
+- Bloodmoon Academy for providing us with an example of a working
+  login client. This was the basis for the original druid.
+
+- The gtk, sourceforge, cvs, gaim, vim, autotools, xmms, mozilla
+  (and many more) teams for providing us with an awesome
+  development environment.
+
+- All of the users we've had over the years, you are the best! :)
