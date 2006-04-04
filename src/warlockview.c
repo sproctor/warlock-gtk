@@ -282,10 +282,9 @@ view_hide (WarlockView *warlock_view)
         g_return_if_fail (warlock_view != NULL);
         g_assert (GTK_IS_WIDGET (warlock_view->widget));
 
-        //gtk_widget_hide (warlock_view->widget);
-        egg_dock_item_hide_item (EGG_DOCK_ITEM (warlock_view->widget));
-
 	if (warlock_view->shown == TRUE) {
+		egg_dock_item_hide_item (EGG_DOCK_ITEM (warlock_view->widget));
+
 		warlock_view->shown = FALSE;
 
 		/* save state of the window */
@@ -300,9 +299,9 @@ view_show (WarlockView *warlock_view)
         g_assert (warlock_view != NULL);
         g_assert (GTK_IS_WIDGET (warlock_view->widget));
 
-        egg_dock_item_show_item (EGG_DOCK_ITEM (warlock_view->widget));
-
 	if (warlock_view->shown == FALSE) {
+		egg_dock_item_show_item (EGG_DOCK_ITEM (warlock_view->widget));
+
 		warlock_view->shown = TRUE;
 
 		/* save the status of the window */
@@ -356,6 +355,7 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	if (warlock_view->shown) {
 		view_show (warlock_view);
 	} else {
+		warlock_view->shown = TRUE;
 		view_hide (warlock_view);
 	}
         gtk_widget_show_all (warlock_view->widget);

@@ -186,6 +186,12 @@ dnl AC_C_CONST
 dnl AC_TYPE_SIZE_T
 dnl AC_STRUCT_TM
 
+if test -z "$ac_cv_prog_CC"; then
+	our_gcc="$CC"
+else
+	our_gcc="$ac_cv_prog_CC"
+fi
+
 dnl Ensure MSVC-compatible struct packing convention is used when
 dnl compiling for Win32 with gcc.
 dnl What flag to use depends on gcc version: gcc3 uses "-mms-bitfields", while
@@ -194,11 +200,6 @@ if test x"$warlock_native_win32" = xyes; then
 if test x"$GCC" = xyes; then
 	msnative_struct=''
 	AC_MSG_CHECKING([how to get MSVC-compatible struct packing])
-	if test -z "$ac_cv_prog_CC"; then
-		our_gcc="$CC"
-	else
-		our_gcc="$ac_cv_prog_CC"
-	fi
 	case `$our_gcc --version | sed -e 's,\..*,.,' -e q` in
 	2.)
 	if $our_gcc -v --help 2>/dev/null | grep fnative-struct >/dev/null; then
@@ -231,11 +232,14 @@ dnl Options
 dnl This breaks windows... so before we try to port to windows, make sure
 dnl we don't sack the CFLAGS, or change the line above
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
-AC_DEFINE(DEBUG, 1, [enable debugging])
-CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
-AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
+	AC_DEFINE(DEBUG, 1, [enable debugging])
+	CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
+	if $our_gcc -v --help 2>/dev/null | grep pointer-sign >/dev/null; then
+		CFLAGS+=" -Wno-pointer-sign"
+	fi
+	AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
 else
-CFLAGS="-O2"
+	CFLAGS="-O2"
 fi
 
 AC_OUTPUT(Makefile util/Makefile dock/Makefile src/Makefile)
