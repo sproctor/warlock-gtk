@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = util dock src
 
 EXTRA_DIST = \
 	$(schema_DATA)

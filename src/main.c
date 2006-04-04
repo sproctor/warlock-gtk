@@ -305,9 +305,9 @@ on_arrival_menu_item_activate          (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
         if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem))) {
-                arrival_view_show ();
+                warlock_view_show ("arrival");
         } else {
-                arrival_view_hide ();
+                warlock_view_hide ("arrival");
         }
 }
 
@@ -317,9 +317,9 @@ on_thoughts_menu_item_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
         if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem))) {
-                thought_view_show ();
+                warlock_view_show ("thoughts");
         } else {
-                thought_view_hide ();
+                warlock_view_hide ("thoughts");
         }
 
 }
@@ -330,9 +330,9 @@ on_familiar_menu_item_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
         if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem))) {
-                familiar_view_show ();
+                warlock_view_show ("familiar");
         } else {
-                familiar_view_hide ();
+                warlock_view_hide ("familiar");
         }
 
 }
@@ -343,9 +343,9 @@ on_deaths_menu_item_activate           (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
         if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem))) {
-                death_view_show ();
+                warlock_view_show ("deaths");
         } else {
-                death_view_hide ();
+                warlock_view_hide ("deaths");
         }
 }
 

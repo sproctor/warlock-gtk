@@ -1,6 +1,12 @@
 NEWS for Warlock:
 -----------------------
 
+0.5-pre5 (2005 Nov 25):
+	- rewritten wizard script engine (should be more accurate)
+	- added setvar to wizard scripts
+	- fixed a few more problems with JS; callbacks now work
+	- can't write in thoughts window, etc
+
 0.5-pre4 (2005 Nov 10):
 	- handle unconscious state
 	- Implemented logging (normal and automatic)

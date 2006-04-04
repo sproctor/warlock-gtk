@@ -37,6 +37,7 @@ WString *w_string_add_tag (WString *w_string, const char *tag_name,
 void w_string_free (WString *w_string, gboolean free_string);
 WString *w_string_dup (const WString *w_string);
 WString *w_string_append (WString *w_string, const WString *append);
+WString *w_string_append_str (WString *w_string, const char *str);
 WString *w_string_append_c (WString *w_string, char c);
 WString *w_string_prepend_c (WString *w_string, char c);
 

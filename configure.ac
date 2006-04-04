@@ -39,6 +39,7 @@ fi
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_LIBTOOL
 
 AM_PROG_LEX
 if test "$LEX" != "flex"; then
@@ -108,11 +109,11 @@ AC_MSG_RESULT($cf_result)
 if test "$cf_result" != yes; then
         if test -z "$disable_spidermonkey"; then
                 AC_MSG_ERROR("You must install SpiderMonkey with \
-			--enable-thread-safe (libsmjs-dev for Debian, Fedora \
-			and Gentoo will need to build the package from \
-			http://www.mozilla.org/js/spidermonkey/ because the \
-			versions that come with them are not thread-safe) or \
-			configure with --without-spidermonkey")
+--enable-thread-safe (libsmjs-dev for Debian, Fedora \
+and Gentoo will need to build the package from \
+http://www.mozilla.org/js/spidermonkey/ because the \
+versions that come with them are not thread-safe) or \
+configure with --without-spidermonkey")
         else
 		WARLOCK_RESTORE_FLAGS
         fi
@@ -138,6 +139,21 @@ AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
 
 dnl Check for GTK, etc
+# Check return type of signal
+AC_TYPE_SIGNAL
+
+AC_CHECK_FUNCS(memmove strerror timegm)
+
+PKG_CHECK_MODULES(EGG, gtk+-2.0 >= 2.5.0)
+AC_SUBST(EGG_LIBS)
+AC_SUBST(EGG_CFLAGS)
+PKG_CHECK_MODULES(EGG_EXEC, libglade-2.0 libgnome-2.0 >= 2.0.0 gtk+-2.0 >= 2.0.0)
+AC_SUBST(EGG_EXEC_LIBS)
+AC_SUBST(EGG_EXEC_CFLAGS)
+PKG_CHECK_MODULES(EGG_XML, libxml-2.0)
+AC_SUBST(EGG_XML_LIBS)
+AC_SUBST(EGG_XML_CFLAGS)
+
 pkg_modules="gtk+-2.0 >= 2.6 gthread-2.0 libglade-2.0 gconf-2.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
 AC_SUBST(PACKAGE_CFLAGS)
@@ -149,6 +165,12 @@ if test x"$GCONFTOOL" = xno; then
   AC_MSG_ERROR([gconftool-2 executable not found in your path - should be installed with GConf])
 fi
 AM_GCONF_SOURCE_2
+
+GLIB_GENMARSHAL=`$PKG_CONFIG --variable=glib_genmarshal glib-2.0`  
+AC_SUBST(GLIB_GENMARSHAL)
+
+GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
+AC_SUBST(GLIB_MKENUMS)
 
 dnl Checks for header files.
 dnl AC_PATH_X
@@ -206,12 +228,14 @@ dnl Checks for functions.
 AC_CHECK_FUNCS([gethostbyname memset socket strstr])
 
 dnl Options
+dnl This breaks windows... so before we try to port to windows, make sure
+dnl we don't sack the CFLAGS, or change the line above
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 AC_DEFINE(DEBUG, 1, [enable debugging])
-CFLAGS="$CFLAGS -g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wstrict-prototypes -Wdeclaration-after-statement -Wno-pointer-sign -O0 -Werror"
+CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -Wno-pointer-sign -O0 -Werror"
 AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
 else
-CFLAGS="$CFLAGS -O2"
+CFLAGS="-O2"
 fi
 
-AC_OUTPUT(Makefile src/Makefile)
+AC_OUTPUT(Makefile util/Makefile dock/Makefile src/Makefile)

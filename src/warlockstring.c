@@ -137,6 +137,18 @@ WString *w_string_append (WString *w_string, const WString *append)
         return w_string;
 }
 
+WString *
+w_string_append_str (WString *w_string, const char *str)
+{
+        if (w_string == NULL) {
+                return w_string_new (str);
+        }
+
+	w_string->string = g_string_append (w_string->string, str);
+
+        return w_string;
+}
+
 WString *w_string_append_c (WString *w_string, char c)
 {
         if (w_string == NULL) {

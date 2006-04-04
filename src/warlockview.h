@@ -22,27 +22,13 @@
 #include "warlockstring.h"
 
 void warlock_views_init (void);
-void arrival_view_show (void);
-void arrival_view_hide (void);
-void death_view_show (void);
-void death_view_hide (void);
-void thought_view_show (void);
-void thought_view_hide (void);
-void familiar_view_show (void);
-void familiar_view_hide (void);
+void warlock_view_show (const char *name);
+void warlock_view_hide (const char *name);
 void echo_f (const char *fmt, ...);
 void echo (const char *str);
 void do_prompt (void);
-void main_view_append (const WString *w_string);
-void main_view_end_line (void);
-char * main_view_get_text (void);
-void arrival_view_append (const WString *string);
-void arrival_view_end_line (void);
-void death_view_append (const WString *string);
-void death_view_end_line (void);
-void familiar_view_append (const WString *string);
-void familiar_view_end_line (void);
-void thought_view_append (const WString *string);
-void thought_view_end_line (void);
+void warlock_view_append (const char *name, const WString *w_string);
+void warlock_view_end_line (const char *name);
+char *warlock_view_get_text (const char *name);
 
 #endif

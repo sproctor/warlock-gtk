@@ -19,4 +19,7 @@ autoconf
 echo config.cache...
 rm -f config.cache
 
+echo libtool...
+libtoolize --automake --copy
+
 echo done

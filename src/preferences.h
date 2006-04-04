@@ -22,6 +22,7 @@
 #define PREFS_PREFIX                    "/apps/warlock"
 
 typedef enum {
+	PREF_NONE,
         PREF_GLOBAL_NAMES,
         PREF_PROFILES,
         PREF_PROFILES_INDEX,

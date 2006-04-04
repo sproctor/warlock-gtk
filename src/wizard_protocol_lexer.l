@@ -54,39 +54,39 @@ static gboolean room_title = FALSE;
 static gboolean death = FALSE;
 static char command = 0;
 static gboolean quit = FALSE;
+static gboolean prompting = FALSE;
 
 /* local function definitions */
 static char *lexer_string (void);
 static void handle_command (char command, char *params);
-static void arrival_string (void);
-static void thought_string (void);
-static void normal_string (void);
+static void output_string (void);
 static void eol_code (void);
 static char *parse_hand (char *str);
+static void unhandled_character (void);
 %}
 
 %option prefix="wizard" nounput noyywrap
-%s THOUGHTS COMMAND PARAMS
+%s COMMAND PARAMS
 
 ANY             [[:alnum:][:blank:][:punct:]]
 EOL		(\n|\r\n)
-REST		.*(\n|\r\n)
+REST		[[:alnum:][:blank:][:punct:]]*(\n|\r\n)
 %%
 \034GS			BEGIN (COMMAND);
 <COMMAND>[[:alpha:]]	{
 	char *tmp;
-	BEGIN (PARAMS);
 	tmp = lexer_string ();
 	g_assert (tmp != NULL && strlen (tmp) == 1);
 	command = tmp[0];
 	g_free (tmp);
+	BEGIN (PARAMS);
 }
 <PARAMS>{REST}		{
 	char *params;
-	BEGIN (INITIAL);
 	params = lexer_string ();
 	handle_command (command, params);
 	g_free (params);
+	BEGIN (INITIAL);
 }
 <INITIAL>\216		{
 	highlighting = TRUE;
@@ -95,18 +95,9 @@ REST		.*(\n|\r\n)
 	highlighting = FALSE;
 }
 <INITIAL>\007		warlock_bell ();
-<INITIAL>(\ \*\ ){ANY}+((\ joins\ the\ adventure\.)|(\ returns\ home\ from\ a\ hard\ day\ of\ adventuring\.)|(\ has\ disconnected\.)){REST} {
-			arrival_string (); }
-<INITIAL>Your\ mind\ hears\ {ANY}+\ thinking,\ \"{ANY}+\"{EOL} {
-                        thought_string (); }
-<INITIAL>You\ hear\ the\ {ANY}+\ thoughts\ of\ {ANY}+\ your\ mind:{EOL} {
-                        BEGIN(THOUGHTS);
-                        thought_string (); }
-<THOUGHTS>{REST}	BEGIN(INITIAL); thought_string ();
-<INITIAL>The\ buzz\ of\ thoughts\ in\ your\ mind\ subsides\.{EOL}     {
-                        thought_string (); }
-<INITIAL>{ANY}+		normal_string ();
+<INITIAL>{ANY}+		output_string ();
 <INITIAL>{EOL}		eol_code ();
+.			unhandled_character();
 %%
 static char *
 lexer_string (void)
@@ -260,7 +251,10 @@ handle_command (char command, char *params)
                         if (time != 0) {
                                 warlock_set_time (time);
                         }
-			do_prompt ();
+			if (!prompting) {
+				do_prompt ();
+				prompting = TRUE;
+			}
                         script_got_prompt ();
 			break;
                 case 'r': // I have no idea what this command does
@@ -325,33 +319,7 @@ parse_hand (char *str)
 }
 
 static void
-arrival_string (void)
-{
-	char *string;
-	WString *w_string;
-
-        string = g_strndup (yytext, yyleng);
-	w_string = w_string_new (g_strchomp (string));
-	arrival_view_append (w_string);
-	w_string_free (w_string, TRUE);
-	arrival_view_end_line ();
-}
-
-static void
-thought_string (void)
-{
-        char *string;
-        WString *w_string;
-
-        string = g_strndup (yytext, yyleng);
-	w_string = w_string_new (g_strchomp (string));
-	thought_view_append (w_string);
-	w_string_free (w_string, TRUE);
-	thought_view_end_line ();
-}
-
-static void
-normal_string (void)
+output_string (void)
 {
 	WString *string = w_string_new_len (yytext, yyleng);
 
@@ -364,11 +332,11 @@ normal_string (void)
 	}
 
 	if (familiar) {
-		familiar_view_append (string);
+		warlock_view_append ("familiar", string);
 	} else if (death) {
-		death_view_append (string);
+		warlock_view_append ("death", string);
 	} else {
-		main_view_append (string);
+		warlock_view_append (NULL, string);
 	}
 
 	w_string_free (string, TRUE);
@@ -378,11 +346,11 @@ static void
 eol_code (void)
 {
 	if (familiar) {
-		familiar_view_end_line ();
+		warlock_view_end_line ("familiar");
 	} else if (death) {
-		death_view_end_line ();
+		warlock_view_end_line ("death");
 	} else {
-		main_view_end_line ();
+		warlock_view_end_line (NULL);
 	}
 }
 
@@ -403,4 +371,10 @@ wizardparse (void)
 			return 1;
 		}
 	}	
+}
+
+static void
+unhandled_character (void)
+{
+	
 }

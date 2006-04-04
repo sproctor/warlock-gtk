@@ -1,5 +1,5 @@
 /* Warlock Front End
- * Copyright 2005 Sean Proctor, Marshall Culpepper
+ * Copyright 2006 Sean Proctor, Marshall Culpepper
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ save_log (const char *filename)
 	print_error (err);
 	g_assert (err == NULL);
 
-	history = main_view_get_text ();
+	history = warlock_view_get_text (NULL);
 
 	g_io_channel_write_chars (file, history, -1, &size, &err);
 	debug ("%d characters written to file\n", size);
@@ -100,36 +100,38 @@ static void
 log_toggle (void)
 {
 	char *key;
+	gboolean autolog;
 
 	key = preferences_get_key (PREF_AUTO_LOG);
-	if (preferences_get_bool (key)) {
-		if (log_file == NULL) {
-			GError *err;
-			char *filename, *name, *path, *path_key;
-
-			path_key = preferences_get_key (PREF_LOG_PATH);
-			path = preferences_get_string (path_key);
-			g_free (path_key);
-
-			name = warlock_log_get_name ();
-
-			filename = g_build_filename (path, name, NULL);
-
-			g_free (name);
-			g_free (path);
-
-			err = NULL;
-			log_file = g_io_channel_new_file (filename, "a", &err);
-			print_error (err);
-		}
-	} else {
-		if (log_file != NULL) {
-			g_io_channel_close (log_file);
-			g_io_channel_unref (log_file);
-			log_file = NULL;
-		}
-	}
+	autolog = preferences_get_bool (key);
 	g_free (key);
+
+	if (autolog && log_file == NULL) {
+		GError *err;
+		char *filename, *name, *path, *path_key;
+
+		path_key = preferences_get_key (PREF_LOG_PATH);
+		path = preferences_get_string (path_key);
+		g_free (path_key);
+
+		name = warlock_log_get_name ();
+
+		filename = g_build_filename (path, name, NULL);
+
+		g_free (name);
+		g_free (path);
+
+		err = NULL;
+		log_file = g_io_channel_new_file (filename, "a", &err);
+		if (log_file == NULL) {
+			echo_f ("Error: \"%s\" for file \"%s\".", err->message,
+					filename);
+		}
+	} else if (!autolog && log_file != NULL) {
+		g_io_channel_close (log_file);
+		g_io_channel_unref (log_file);
+		log_file = NULL;
+	}
 }
 
 static void

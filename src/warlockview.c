@@ -22,10 +22,14 @@
 
 #include <stdarg.h>
 #include <ctype.h>
+#include <string.h>
 
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <glib/gprintf.h>
+
+#include <egg-dock.h>
+#include <egg-dock-item.h>
 
 #include "warlock.h"
 #include "warlockview.h"
@@ -43,15 +47,14 @@ typedef struct _WarlockView WarlockView;
 
 struct _WarlockView {
         const char      *title;
+	const char	*name;
         GtkWidget 	*text_view;
         GtkTextBuffer 	*text_buffer;
 	GtkWidget	*widget;
-	GtkWidget	*pane;
 	gboolean	shown;
-	WarlockView	*prev;
-	WarlockView	*next;
         Preference      gconf_key;
         GtkTextMark     *mark;
+	WString		*buffer;
 };
 
 /* external global variables */
@@ -61,28 +64,15 @@ extern GtkTextTagTable *text_tag_table;
 extern gboolean script_running;
 
 /* local variables */
-static WarlockView *top_view = NULL;
-
+static GtkWidget *views_dock = NULL;
 static GList *views = NULL;
-static WarlockView *main_view = NULL,
-        *arrival_view = NULL,
-        *death_view = NULL,
-        *familiar_view = NULL,
-	*thought_view = NULL;
-
-static WString *main_buffer = NULL,
-        *arrival_buffer = NULL,
-        *death_buffer = NULL,
-        *familiar_buffer = NULL,
-	*thought_buffer = NULL;
-
-// are we on the line immediately after a prompt?
-static gboolean prompting = FALSE;
+static WarlockView *main_view = NULL;
 
 static int max_buffer_size = -1;
 static guint buffer_size_notification = 0;
 
-static void change_text_color (const char *key, gpointer user_data)
+static void
+change_text_color (const char *key, gpointer user_data)
 {
         GtkWidget *text_view;
         GdkColor *color;
@@ -92,7 +82,8 @@ static void change_text_color (const char *key, gpointer user_data)
 	gtk_widget_modify_text (text_view, GTK_STATE_NORMAL, color);
 }
 
-static void change_base_color (const char *key, gpointer user_data)
+static void
+change_base_color (const char *key, gpointer user_data)
 {
         GtkWidget *text_view;
         GdkColor *color;
@@ -102,7 +93,8 @@ static void change_base_color (const char *key, gpointer user_data)
 	gtk_widget_modify_base (text_view, GTK_STATE_NORMAL, color);
 }
 
-static void change_font (const char *key, gpointer user_data)
+static void
+change_font (const char *key, gpointer user_data)
 {
         GtkWidget *text_view;
         PangoFontDescription *font;
@@ -112,7 +104,8 @@ static void change_font (const char *key, gpointer user_data)
 	gtk_widget_modify_font (text_view, font);
 }
 
-static WarlockView* warlock_view_new (GtkWidget *text_view)
+static WarlockView *
+warlock_view_new (GtkWidget *text_view)
 {
         PangoFontDescription *font;
         GdkColor *color;
@@ -133,10 +126,7 @@ static WarlockView* warlock_view_new (GtkWidget *text_view)
 			warlock_view->text_buffer);
 
 	warlock_view->widget = NULL;
-	warlock_view->pane = NULL;
-	warlock_view->prev = NULL;
-	warlock_view->next = NULL;
-	warlock_view->shown = TRUE;
+	warlock_view->shown = FALSE;
         gtk_text_buffer_get_end_iter (warlock_view->text_buffer, &iter);
         warlock_view->mark = gtk_text_buffer_create_mark
                 (warlock_view->text_buffer, NULL, &iter, TRUE);
@@ -208,7 +198,8 @@ warlock_view_trim (WarlockView *view)
 
 // append a string to the WarlockView
 // string needs to be valid UTF-8, and gets mangled, sorry.
-static void warlock_view_append (WarlockView *view, WString *string)
+static void
+view_append (WarlockView *view, WString *string)
 {
         GtkTextIter iter;
         GtkTextBuffer *buffer;
@@ -285,129 +276,93 @@ static void warlock_view_append (WarlockView *view, WString *string)
 }
 
 // destroy the view
-static void warlock_view_hide (WarlockView *warlock_view)
+static void
+view_hide (WarlockView *warlock_view)
 {
-        // FIXME: we leak widgets
-        GtkWidget *new_container;
-        GtkWidget *parent;
-        WarlockView *prev_view;
+        g_return_if_fail (warlock_view != NULL);
+        g_assert (GTK_IS_WIDGET (warlock_view->widget));
 
-        warlock_view->shown = FALSE;
+        //gtk_widget_hide (warlock_view->widget);
+        egg_dock_item_hide_item (EGG_DOCK_ITEM (warlock_view->widget));
 
-        parent = gtk_widget_get_parent (warlock_view->widget);
-        gtk_container_remove (GTK_CONTAINER (parent), warlock_view->widget);
+	if (warlock_view->shown == TRUE) {
+		warlock_view->shown = FALSE;
 
-        prev_view = warlock_view->prev;
-
-        new_container = gtk_widget_get_parent (warlock_view->pane);
-        gtk_container_remove (GTK_CONTAINER (warlock_view->pane),
-                        prev_view->widget);
-        gtk_container_remove (GTK_CONTAINER (new_container),
-                        warlock_view->pane);
-
-        if (warlock_view->next == NULL) {
-                g_assert (warlock_view == top_view);
-                gtk_container_add (GTK_CONTAINER (new_container),
-                                prev_view->widget);
-
-                prev_view->next = NULL;
-                top_view = prev_view;
-        } else {
-                WarlockView *next_view;
-                GtkWidget *box;
-
-                g_assert (warlock_view != top_view);
-
-                next_view = warlock_view->next;
-                box = gtk_widget_get_parent (next_view->pane);
-
-                gtk_container_remove (GTK_CONTAINER (box), next_view->pane);
-                gtk_paned_add2 (GTK_PANED (next_view->pane),
-                                prev_view->widget);
-                gtk_container_add (GTK_CONTAINER (new_container),
-                                next_view->pane);
-                next_view->prev = prev_view;
-                prev_view->next = next_view;
-        }
-
-        gtk_widget_show_all (new_container);
-        g_object_unref (warlock_view->pane);
-
-        /* save state of the window */
-        preferences_set_bool (preferences_get_key (warlock_view->gconf_key),
-                        FALSE);
+		/* save state of the window */
+		preferences_set_bool (preferences_get_key
+				(warlock_view->gconf_key), FALSE);
+	}
 }
 
-static void warlock_view_show (WarlockView *warlock_view)
+static void
+view_show (WarlockView *warlock_view)
 {
-        GtkWidget *vbox;
-        GtkWidget *top_view_parent;
-
         g_assert (warlock_view != NULL);
         g_assert (GTK_IS_WIDGET (warlock_view->widget));
 
-        warlock_view->pane = g_object_ref (gtk_vpaned_new ());
-        vbox = gtk_vbox_new (FALSE, 0);
+        egg_dock_item_show_item (EGG_DOCK_ITEM (warlock_view->widget));
 
-        top_view_parent = gtk_widget_get_parent (top_view->widget);
-        g_object_ref (top_view->widget);
-        gtk_container_remove (GTK_CONTAINER (top_view_parent),
-                        top_view->widget);
-        gtk_paned_add2 (GTK_PANED (warlock_view->pane), top_view->widget);
-        gtk_paned_add1 (GTK_PANED (warlock_view->pane), vbox);
-        gtk_box_pack_start_defaults (GTK_BOX (vbox), warlock_view->widget);
-        gtk_container_add (GTK_CONTAINER (top_view_parent),
-                        warlock_view->pane);
+	if (warlock_view->shown == FALSE) {
+		warlock_view->shown = TRUE;
 
-        gtk_widget_show_all (warlock_view->pane);
-
-        warlock_view->prev = top_view;
-        warlock_view->next = NULL;
-        warlock_view->shown = TRUE;
-        top_view->next = warlock_view;
-        top_view = warlock_view;
-
-        /* save the status of the window */
-        preferences_set_bool (preferences_get_key (warlock_view->gconf_key),
-                        TRUE);
+		/* save the status of the window */
+		preferences_set_bool (preferences_get_key
+				(warlock_view->gconf_key), TRUE);
+	}
 }
 
 static WarlockView *
-warlock_view_init (Preference key, const char *title, const char *menu_name)
+warlock_view_init (Preference key, const char *name, const char *title,
+		const char *glade_name)
 {
         GtkWidget *text_view;
-        GtkWidget *handle_box;
+        GtkWidget *dock_item;
         GtkWidget *frame;
         GtkWidget *scrolled_window;
         GtkWidget *menu_item;
         WarlockView *warlock_view;
 
-        handle_box = g_object_ref (gtk_handle_box_new ());
+        dock_item = egg_dock_item_new (name, title, EGG_DOCK_ITEM_BEH_NORMAL);
         frame = gtk_frame_new (title);
         scrolled_window = gtk_scrolled_window_new (NULL, NULL);
         text_view = gtk_text_view_new ();
 
         warlock_view = warlock_view_new (text_view);
-        warlock_view->widget = handle_box;
-        gtk_handle_box_set_shadow_type (GTK_HANDLE_BOX (handle_box),
-                        GTK_SHADOW_NONE);
+        warlock_view->widget = dock_item;
 
-        warlock_view->shown = preferences_get_bool (preferences_get_key (key));
-        warlock_view->gconf_key = key;
+	if (key != PREF_NONE) {
+		warlock_view->shown = preferences_get_bool (preferences_get_key
+				(key));
+	} else {
+		warlock_view->shown = TRUE;
+	}
+	warlock_view->gconf_key = key;
 
         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
                         GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
 
         gtk_container_add (GTK_CONTAINER (scrolled_window), text_view);
         gtk_container_add (GTK_CONTAINER (frame), scrolled_window);
-        gtk_container_add (GTK_CONTAINER (handle_box), frame);
+        gtk_container_add (GTK_CONTAINER (dock_item), frame);
+	egg_dock_add_item (EGG_DOCK (views_dock), EGG_DOCK_ITEM (dock_item),
+			EGG_DOCK_CENTER);
 
-        menu_item = glade_xml_get_widget (warlock_xml, menu_name);
-        if (warlock_view->shown) {
-                warlock_view_show (warlock_view);
-        }
-        gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item),
-                        warlock_view->shown);
+	if (glade_name != NULL) {
+		menu_item = glade_xml_get_widget (warlock_xml, glade_name);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item),
+				warlock_view->shown);
+	}
+
+	if (warlock_view->shown) {
+		view_show (warlock_view);
+	} else {
+		view_hide (warlock_view);
+	}
+        gtk_widget_show_all (warlock_view->widget);
+
+	warlock_view->name = name;
+
+	views = g_list_append (views, warlock_view);
 
         return warlock_view;
 }
@@ -436,21 +391,27 @@ void
 warlock_views_init (void)
 {
         char *key;
+	GtkWidget *box;
 
-        main_view = warlock_view_new (glade_xml_get_widget (warlock_xml,
-                                "main_text_view"));
-        main_view->widget = glade_xml_get_widget (warlock_xml,
-                        "main_view_frame");
-        top_view = main_view;
+	box = glade_xml_get_widget (warlock_xml, "main_window_vbox");
 
-        arrival_view = warlock_view_init (PREF_ARRIVAL_VIEW,
-                     _("Arrivals and Departures"), "arrival_menu_item");
-        thought_view = warlock_view_init (PREF_THOUGHT_VIEW, _("Thoughts"),
-                        "thoughts_menu_item");
-        death_view = warlock_view_init (PREF_DEATH_VIEW, _("Deaths"),
-                        "deaths_menu_item");
-        familiar_view = warlock_view_init (PREF_FAMILIAR_VIEW, _("Familiar"),
-                        "familiar_menu_item");
+	views_dock = egg_dock_new ();
+	gtk_box_pack_start (GTK_BOX (box), views_dock, TRUE, TRUE, 0);
+	gtk_box_reorder_child (GTK_BOX (box), views_dock, 2);
+	gtk_widget_show (views_dock);
+
+	views = NULL;
+
+        main_view = warlock_view_init (PREF_NONE, "main", _("Main"), NULL);
+
+        warlock_view_init (PREF_ARRIVAL_VIEW, "arrival",
+			_("Arrivals and Departures"), "arrival_menu_item");
+        warlock_view_init (PREF_THOUGHT_VIEW, "thoughts", _("Thoughts"),
+			"thoughts_menu_item");
+        warlock_view_init (PREF_DEATH_VIEW, "deaths", _("Deaths"),
+			"deaths_menu_item");
+        warlock_view_init (PREF_FAMILIAR_VIEW, "familiar", _("Familiar"),
+			"familiar_menu_item");
 
         // max buffer size init
         key = preferences_get_key (PREF_TEXT_BUFFER_SIZE);
@@ -484,179 +445,111 @@ echo (const char *str)
         wstr = w_string_new (str);
 
         w_string_add_tag (wstr, ECHO_TAG, 0, -1);
-        warlock_view_append (main_view, wstr);
+        view_append (main_view, wstr);
 }
 
-void do_prompt (void)
+static WarlockView *
+get_view (const char *name)
+{
+	GList *cur;
+
+	if (name == NULL) {
+		return main_view;
+	}
+
+	for (cur = views; cur != NULL; cur = cur->next) {
+		WarlockView *view;
+
+		view = cur->data;
+		if (strcmp (view->name, name) == 0) {
+			return view;
+		}
+	}
+
+	return NULL;
+}
+
+void
+do_prompt (void)
 {
         // FIXME figure out some way to abstract this function
-        GString *string;
+        WString *string;
+	WarlockView *view;
 #ifdef CONFIG_SPIDERMONKEY
         char* js_prompt_string;
 #endif
 
-        if (prompting)
-                return;
-
-        string = g_string_new ("");
+	view = get_view (NULL);
+        string = w_string_new ("");
 
         if (script_running) {
-                g_string_append (string, "[script]");
+                w_string_append_str (string, "[script]");
         }
 
 #ifdef CONFIG_SPIDERMONKEY
         js_prompt_string = js_script_get_prompt_string ();
         if (js_prompt_string != NULL) {
-                g_string_append (string, js_prompt_string);
+                w_string_append_str (string, js_prompt_string);
                 g_free (js_prompt_string);
         }
 #endif
 
-        g_string_append_c (string, '>');
-        warlock_view_append (main_view, w_string_new (string->str));
-        prompting = TRUE;
-        g_string_free (string, TRUE);
+        w_string_append_c (string, '>');
+
+	// If we have some text to display, do it
+	if (view->buffer != NULL) {
+		warlock_view_end_line (NULL);
+	}
+	// new line to insert after the prompt
+	w_string_prepend_c (string, '\n');
+
+        view_append (main_view, string);
+        w_string_free (string, TRUE);
 }
 
-void main_view_append (const WString *w_string)
+void
+warlock_view_append (const char *name, const WString *w_string)
 {
-        main_buffer = w_string_append (main_buffer, w_string);
+	WarlockView *view;
+
+	view = get_view (name);
+        view->buffer = w_string_append (view->buffer, w_string);
 }
 
-void main_view_end_line (void)
+void
+warlock_view_end_line (const char *name)
 {
-        if (prompting) {
-                main_buffer = w_string_prepend_c (main_buffer, '\n');
-                prompting = FALSE;
-        }
-        main_buffer = w_string_append_c (main_buffer, '\n');
-        warlock_view_append (main_view, main_buffer);
-        w_string_free (main_buffer, TRUE);
-        main_buffer = NULL;
+	WarlockView *view;
+
+	view = get_view (name);
+        view->buffer = w_string_append_c (view->buffer, '\n');
+        view_append (view, view->buffer);
+        w_string_free (view->buffer, TRUE);
+        view->buffer = NULL;
 }
 
 char *
-main_view_get_text (void)
+warlock_view_get_text (const char *name)
 {
 	GtkTextIter start, end;
+	WarlockView *view;
 
-	gtk_text_buffer_get_start_iter (main_view->text_buffer, &start);
-	gtk_text_buffer_get_end_iter (main_view->text_buffer, &end);
+	view = get_view (name);
+	gtk_text_buffer_get_start_iter (view->text_buffer, &start);
+	gtk_text_buffer_get_end_iter (view->text_buffer, &end);
 
-	return gtk_text_buffer_get_text (main_view->text_buffer, &start, &end,
+	return gtk_text_buffer_get_text (view->text_buffer, &start, &end,
 			FALSE);
 }
 
-void arrival_view_show (void)
+void
+warlock_view_show (const char *name)
 {
-        warlock_view_show (arrival_view);
+        view_show (get_view (name));
 }
 
-void arrival_view_hide (void)
+void
+warlock_view_hide (const char *name)
 {
-        warlock_view_hide (arrival_view);
-}
-
-void arrival_view_append (const WString *string)
-{
-        arrival_buffer = w_string_append (arrival_buffer, string);
-}
-
-void arrival_view_end_line (void)
-{
-        if (arrival_view != NULL && arrival_view->shown) {
-                arrival_buffer = w_string_append_c (arrival_buffer, '\n');
-                warlock_view_append (arrival_view, arrival_buffer);
-        } else {
-                main_view_append (arrival_buffer);
-                main_view_end_line ();
-        }
-        w_string_free (arrival_buffer, TRUE);
-        arrival_buffer = NULL;
-}
-
-void death_view_show (void)
-{
-        warlock_view_show (death_view);
-}
-
-void death_view_hide (void)
-{
-        warlock_view_hide (death_view);
-}
-
-void death_view_append (const WString *string)
-{
-        death_buffer = w_string_append (death_buffer, string);
-}
-
-void death_view_end_line (void)
-{
-        if (death_view != NULL && death_view->shown) {
-                death_buffer = w_string_append_c (death_buffer, '\n');
-                warlock_view_append (death_view, death_buffer);
-        } else {
-                main_view_append (death_buffer);
-                main_view_end_line ();
-        }
-        w_string_free (death_buffer, TRUE);
-        death_buffer = NULL;
-}
-
-void familiar_view_show (void)
-{
-        warlock_view_show (familiar_view);
-}
-
-void familiar_view_hide (void)
-{
-        warlock_view_hide (familiar_view);
-}
-
-void familiar_view_append (const WString *string)
-{
-        familiar_buffer = w_string_append (familiar_buffer, string);
-}
-
-void familiar_view_end_line (void)
-{
-        if (familiar_view != NULL && familiar_view->shown) {
-                familiar_buffer = w_string_append_c (familiar_buffer, '\n');
-                warlock_view_append (familiar_view, familiar_buffer);
-        } else {
-                w_string_add_tag (familiar_buffer, MONSTER_TAG, 0, -1);
-                main_view_append (familiar_buffer);
-                main_view_end_line ();
-        }
-        w_string_free (familiar_buffer, TRUE);
-        familiar_buffer = NULL;
-}
-
-void thought_view_show (void)
-{
-        warlock_view_show (thought_view);
-}
-
-void thought_view_hide (void)
-{
-        warlock_view_hide (thought_view);
-}
-
-void thought_view_append (const WString *string)
-{
-        thought_buffer = w_string_append (thought_buffer, string);
-}
-
-void thought_view_end_line (void)
-{
-        if (thought_view != NULL && thought_view->shown) {
-                thought_buffer = w_string_append_c (thought_buffer, '\n');
-                warlock_view_append (thought_view, thought_buffer);
-        } else {
-                w_string_add_tag (thought_buffer, MONSTER_TAG, 0, -1);
-                main_view_append (thought_buffer);
-                main_view_end_line ();
-        }
-        w_string_free (thought_buffer, TRUE);
-        thought_buffer = NULL;
+        view_hide (get_view (name));
 }
