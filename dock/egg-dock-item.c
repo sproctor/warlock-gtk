@@ -174,8 +174,6 @@ struct _EggDockItemPrivate {
     GtkWidget *grip;
     guint      grip_size;
     
-    gboolean   shown;
-
     GtkWidget *tab_label;
 
     gint       preferred_width;
@@ -370,7 +368,6 @@ egg_dock_item_instance_init (EggDockItem *item)
     item->_priv->tab_label = NULL;
 
     item->_priv->ph = NULL;
-    item->_priv->shown = TRUE;
 }
 
 static GObject *
@@ -1542,9 +1539,6 @@ egg_dock_item_hide_item (EggDockItem *item)
 {
     g_return_if_fail (item != NULL);
 
-    if (!item->_priv->shown) return;
-    item->_priv->shown = FALSE;
-
     if (!EGG_DOCK_OBJECT_ATTACHED (item))
         /* already hidden/detached */
         return;
@@ -1583,9 +1577,10 @@ egg_dock_item_show_item (EggDockItem *item)
 {
     g_return_if_fail (item != NULL);
 
-    if (item->_priv->shown) return;
-    item->_priv->shown = TRUE;
-
+    if (EGG_DOCK_OBJECT_ATTACHED (item))
+        /* already shown/attached */
+        return;
+    
     if (item->_priv->ph) {
         gtk_container_add (GTK_CONTAINER (item->_priv->ph), GTK_WIDGET (item));
         g_object_unref (item->_priv->ph);
