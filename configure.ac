@@ -232,7 +232,7 @@ dnl This breaks windows... so before we try to port to windows, make sure
 dnl we don't sack the CFLAGS, or change the line above
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 AC_DEFINE(DEBUG, 1, [enable debugging])
-CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -Wno-pointer-sign -O0 -Werror"
+CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
 AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
 else
 CFLAGS="-O2"
