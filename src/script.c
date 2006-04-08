@@ -84,6 +84,7 @@ static void script_counter (GList *args);
 static void script_exit (GList *args);
 static void script_setvariable (GList *args);
 static void script_deletevariable (GList *args);
+static void script_random(GList *args);
 
 /* local constants */
 static const struct {
@@ -108,6 +109,7 @@ static const struct {
 	{"counter", script_counter},
 	{"setvariable", script_setvariable},
 	{"deletevariable", script_deletevariable},
+	{"random", script_random},
 	{"addtohighlightstrings", NULL},
 	{"addtohighlightnames", NULL},
 	{"deletefromhighlightstrings", NULL},
@@ -1068,4 +1070,33 @@ script_deletevariable (GList *args)
 				(args->data), -1));
 
         script_variable_unset (uservar_name);
+}
+
+/* assign %r a random number */
+/* http://members.cox.net/srice1/random/crandom.html */
+static void
+script_random (GList *args)
+{
+	ScriptData *randdata;
+	double randr;
+	int randresult;
+
+	if (args == NULL || args->data == NULL || args->next == NULL ||
+			args->next->data == NULL) {
+                script_error ("Not enough arguments for random");
+                return;
+        }
+
+	randdata = (ScriptData *) g_new (ScriptData, 1);
+	randdata->type = SCRIPT_TYPE_INTEGER;
+
+	randr = ((double)rand()/((double)(RAND_MAX)+(double)(1)));
+	randresult = (randr * 
+			(script_data_as_integer(args->next->data) - 
+			 script_data_as_integer(args->data) + 1))
+			+ script_data_as_integer(args->data);
+	
+	randdata->value.as_integer = randresult;
+	
+	script_variable_set ("r", randdata);
 }
