@@ -70,18 +70,20 @@ static void script_move (GList *args);
 static void script_goto (GList *args);
 static void script_pause (GList *args);
 static void script_shift (GList *args);
-static void script_match (GList *args);
 static void script_put (GList *args);
 static void script_echo (GList *args);
+static void script_match (GList *args);
+static void script_matchre (GList *args);
+static void script_matchwait (GList *args);
 static void script_waitfor (GList *args);
+static void script_waitforre (GList *args);
 static void script_wait (GList *args);
 static void script_save (GList *args);
 static void script_nextroom (GList *args);
-static void script_matchwait (GList *args);
 static void script_counter (GList *args);
 static void script_exit (GList *args);
-static void script_matchre (GList *args);
-static void script_setvar (GList *args);
+static void script_setvariable (GList *args);
+static void script_deletevariable (GList *args);
 
 /* local constants */
 static const struct {
@@ -95,15 +97,21 @@ static const struct {
 	{"match", script_match},
 	{"matchre", script_matchre},
 	{"matchwait", script_matchwait},
+	{"waitfor", script_waitfor},
+	{"waitforre", script_waitforre},
 	{"put", script_put},
 	{"echo", script_echo},
-	{"waitfor", script_waitfor},
 	{"wait", script_wait},
 	{"exit", script_exit},
 	{"save", script_save},
 	{"nextroom", script_nextroom},
 	{"counter", script_counter},
-	{"setvar", script_setvar},
+	{"setvariable", script_setvariable},
+	{"deletevariable", script_deletevariable},
+	{"addtohighlightstrings", NULL},
+	{"addtohighlightnames", NULL},
+	{"deletefromhighlightstrings", NULL},
+	{"deletefromhighlightnames", NULL},
 	{NULL, NULL}
 };
 
@@ -355,7 +363,9 @@ script_command_call (ScriptCommand *command)
 			/* any calls to interface functions, etc need to be
 			 * surrounded by gdk_threads_enter and _leave macros
 			 */
-			predefined_functions[i].func (args);
+			if (predefined_functions[i].func != NULL) {
+				predefined_functions[i].func (args);
+			}
 			break;
 		}
 	}
@@ -631,6 +641,21 @@ clear_line_queue (void)
         while (g_async_queue_try_pop (script_line_queue) != NULL) ;
 }
 
+/* you must hold mutex to call this function */
+static void
+next_room_wait (GMutex *mutex)
+{
+        gboolean moved;
+
+        do {
+                GTimeVal time;
+
+                g_get_current_time (&time);
+                g_time_val_add (&time, SCRIPT_TIMEOUT);
+                moved = g_cond_timed_wait (move_cond, mutex, &time);
+        } while (!moved && script_running);
+}
+
 /*** script commands ***/
 
 /* shifts numbered variables down one, remove %1 */
@@ -758,6 +783,73 @@ script_matchwait (GList *args)
 	warlock_roundtime_wait (&script_running);
 }
 
+/* waits for a string to match */
+static void
+script_waitfor (GList *args)
+{
+	char *waitfor_string;
+        char *line;
+
+	g_mutex_lock (script_mutex);
+
+	waitfor_string = g_strstrip (g_ascii_strdown (script_list_as_string
+				(args), -1));
+	debug ("waitfor string: %s\n", waitfor_string);
+
+        clear_line_queue ();
+
+	g_mutex_unlock (script_mutex);
+
+	/* we get woken up to check each string */
+        do {
+                line = get_line ();
+        } while (line != NULL && strstr (line, waitfor_string) == NULL);
+
+        // wait for the roundtime to end
+	warlock_roundtime_wait (&script_running);	
+}
+
+/* waits for a regexp to match */
+static void
+script_waitforre (GList *args)
+{
+	pcre *regex;
+	pcre_extra *regex_extra;
+	char *str;
+        char *line;
+        const char *err;
+        int err_offset;
+
+	g_mutex_lock (script_mutex);
+        clear_line_queue ();
+
+	str = g_strstrip (g_ascii_strdown (script_list_as_string (args), -1));
+	debug ("waitforre regex: %s\n", str);
+
+        err = NULL;
+        regex = pcre_compile (str, 0, &err, &err_offset, NULL);
+        if (err != NULL) {
+                script_error ("Invalid regex");
+		script_running = FALSE;
+        }
+        regex_extra = pcre_study (regex, 0, &err);
+        if (err != NULL) {
+                script_error ("Invalid regex");
+		script_running = FALSE;
+        }
+
+	g_mutex_unlock (script_mutex);
+
+	/* we get woken up to check each string */
+        do {
+                line = get_line ();
+        } while (line != NULL && pcre_exec (regex, regex_extra, line,
+				strlen(line), 0, 0, NULL, 0) < 0);
+
+        // wait for the roundtime to end
+	warlock_roundtime_wait (&script_running);	
+}
+
 /* manipulate the %c variable (set,add,subtract,multiply,divide) */
 static void
 script_counter (GList *args)
@@ -832,21 +924,6 @@ script_goto (GList *args)
         goto_label (label);
 }
 
-/* you must hold mutex to call this function */
-static void
-next_room_wait (GMutex *mutex)
-{
-        gboolean moved;
-
-        do {
-                GTimeVal time;
-
-                g_get_current_time (&time);
-                g_time_val_add (&time, SCRIPT_TIMEOUT);
-                moved = g_cond_timed_wait (move_cond, mutex, &time);
-        } while (!moved && script_running);
-}
-
 /* put direction, then wait for the player to move */
 static void
 script_move (GList *args)
@@ -890,32 +967,6 @@ script_echo (GList *args)
 	gdk_threads_enter ();
 	echo_f ("%s\n", script_list_as_string (args));
 	gdk_threads_leave ();
-}
-
-/* waits for a string to match */
-static void
-script_waitfor (GList *args)
-{
-	char *waitfor_string;
-        char *line;
-
-	g_mutex_lock (script_mutex);
-
-	waitfor_string = g_strstrip (g_ascii_strdown (script_list_as_string
-				(args), -1));
-	debug ("waitfor string: %s\n", waitfor_string);
-
-        clear_line_queue ();
-
-	g_mutex_unlock (script_mutex);
-
-	/* we get woken up to check each string */
-        do {
-                line = get_line ();
-        } while (line != NULL && strstr (line, waitfor_string) == NULL);
-
-        // wait for the roundtime to end
-	warlock_roundtime_wait (&script_running);	
 }
 
 /* wait for a status prompt */
@@ -981,14 +1032,14 @@ script_save (GList *args)
 
 /* Support for user-created variables */
 static void
-script_setvar (GList *args)
+script_setvariable (GList *args)
 {
 	ScriptData *uservar_value;
 	char *uservar_name;
 
 	if (args == NULL || args->data == NULL || args->next == NULL ||
 			args->next->data == NULL) {
-		script_error ("Not enough arguments to setvar");
+		script_error ("Not enough arguments to setvariable");
 		return;
 	}
 
@@ -1000,4 +1051,21 @@ script_setvar (GList *args)
 	uservar_value->value.as_string = g_strstrip (script_list_as_string
 			(args->next));
         script_variable_set (uservar_name, uservar_value);
+}
+
+/* delete user-created variables */
+static void
+script_deletevariable (GList *args)
+{
+	char *uservar_name;
+
+	if (args == NULL || args->data == NULL) {
+		script_error ("Not enough arguments to deletevariable");
+		return;
+	}
+
+	uservar_name = g_strstrip (g_ascii_strdown (script_data_as_string
+				(args->data), -1));
+
+        script_variable_unset (uservar_name);
 }
