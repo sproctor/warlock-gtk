@@ -33,7 +33,13 @@
      SCRIPT_STRING = 259,
      SCRIPT_VARIABLE = 260,
      SCRIPT_IF_ = 261,
-     SCRIPT_EOL = 262
+     SCRIPT_EOL = 262,
+     SCRIPT_IF = 263,
+     SCRIPT_THEN = 264,
+     SCRIPT_BINARY_OP = 265,
+     SCRIPT_UNARY_OP = 266,
+     SCRIPT_COMPARE_OP = 267,
+     SCRIPT_TEST_OP = 268
    };
 #endif
 /* Tokens.  */
@@ -42,19 +48,31 @@
 #define SCRIPT_VARIABLE 260
 #define SCRIPT_IF_ 261
 #define SCRIPT_EOL 262
+#define SCRIPT_IF 263
+#define SCRIPT_THEN 264
+#define SCRIPT_BINARY_OP 265
+#define SCRIPT_UNARY_OP 266
+#define SCRIPT_COMPARE_OP 267
+#define SCRIPT_TEST_OP 268
 
 
 
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 45 "script_parser.y"
+#line 41 "script_parser.y"
 typedef union YYSTYPE {
-	char *string;
-	GList *list;
-	ScriptCommand *command;
+	char			*string;
+	GList			*list;
+	ScriptData		*data;
+	ScriptCommand		*command;
+	ScriptConditional	*conditional;
+	ScriptBinaryOp		 binary_op;
+	ScriptUnaryOp		 unary_op;
+	ScriptCompareOp		 compare_op;
+	ScriptTestOp		 test_op;
 } YYSTYPE;
 /* Line 1447 of yacc.c.  */
-#line 58 "script_parser.h"
+#line 76 "script_parser.h"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1

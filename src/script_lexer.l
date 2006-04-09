@@ -36,7 +36,7 @@ extern gboolean script_running;
 %}
 
 %option prefix="script" nounput case-insensitive stack noyy_top_state noyywrap
-%x VAR COMMENT STRING IF
+%x VAR COMMENT STRING IF IF_ IF_STRING QUOTE
 
 %%
 <*>(\n|\r\n)			{
@@ -47,10 +47,43 @@ extern gboolean script_running;
 	return SCRIPT_EOL;
 }
 <INITIAL>if_			{
-        yy_push_state (IF);
+        yy_push_state (IF_);
         debug ("script if_\n");
 }
-<INITIAL>[^[:alpha:][:blank:]]		{
+<INITIAL>if[[:blank:]]		{
+	yy_push_state (IF);
+	debug ("script if\n");
+}
+<IF>!=				{
+	debug ("script notequal\n");
+	yylval.compare_op = SCRIPT_OP_NOTEQUAL;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>(=|==)			{
+	debug ("script equal\n");
+	yylval.compare_op = SCRIPT_OP_EQUAL;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>&&				{
+	debug ("script AND\n");
+	yylval.binary_op = SCRIPT_OP_AND;
+	return SCRIPT_BINARY_OP;
+}
+<IF>\|\|			{
+	debug ("script OR\n");
+	yylval.binary_op = SCRIPT_OP_OR;
+	return SCRIPT_BINARY_OP;
+}
+<IF>!				{
+	debug ("script NOT\n");
+	yylval.unary_op = SCRIPT_OP_NOT;
+	return SCRIPT_UNARY_OP;
+}
+<IF>then			{
+	debug ("THEN\n");
+	return SCRIPT_THEN;
+}
+<INITIAL>[^[:alpha:][:blank:]]	{
 	debug ("comment line\n");
 	yy_push_state (COMMENT);
 }
@@ -60,24 +93,31 @@ extern gboolean script_running;
 	debug ("got label: %s\n", yylval.string);
         return SCRIPT_LABEL;
 }
-<STRING>%			{
-	yy_push_state (VAR);
-}
 <VAR>[_[:alnum:]]+		{
         yy_pop_state ();
         yylval.string = lexer_string ();
         debug ("script variable: %s\n", yylval.string);
         return SCRIPT_VARIABLE;
 }
-<IF>[_[:alnum:]]+		{
+<IF_>[_[:alnum:]]+		{
         yy_pop_state ();
         yylval.string = lexer_string ();
-        debug ("script if: %s\n", yylval.string);
+        debug ("script if_: %s\n", yylval.string);
         return SCRIPT_IF_;
 }
 <VAR>.				{
 	yy_pop_state ();
 	yymore ();
+	yylval.string = lexer_string ();
+	debug ("script string: %s\n", yylval.string);
+	return SCRIPT_STRING;
+}
+<INITIAL,IF>\"			{
+	yy_push_state (QUOTE);
+	yymore ();
+}
+<QUOTE>\"			{ yy_pop_state (); }
+<QUOTE>[^"%\r\n]+		{
 	yylval.string = lexer_string ();
 	debug ("script string: %s\n", yylval.string);
 	return SCRIPT_STRING;
@@ -90,6 +130,18 @@ extern gboolean script_running;
         yylval.string = lexer_string ();
         debug ("script string: %s\n", yylval.string);
         return SCRIPT_STRING;
+}
+<STRING,IF_STRING,INITIAL,QUOTE>%		{
+	yy_push_state (VAR);
+}
+<IF>[[:alpha:]]			{
+	yy_push_state (IF_STRING);
+	yymore ();
+}
+<IF_STRING>[^[:blank:]%\r\n]+	{
+	yylval.string = lexer_string ();
+	debug ("script if_string: %s\n", yylval.string);
+	return SCRIPT_STRING;
 }
 <INITIAL>[[:blank:]]+		{}
 .				debug ("Unhandled char: %s\n", lexer_string ());

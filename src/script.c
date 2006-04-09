@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
@@ -37,11 +38,12 @@
 #include "debug.h"
 
 /* macro definitions */
+#define ltoa(x)         g_strdup_printf ("%ld", x)
 #define itoa(x)         g_strdup_printf ("%d", x)
 #define SCRIPT_TIMEOUT  100000
 
 /* external variables */
-extern int scriptparse (void);
+extern int scriptparse (ScriptCommand **command, int line_number);
 extern int script_scan_string (const char*);
 
 /* local data types */
@@ -62,9 +64,12 @@ static gboolean script_variable_exists (const char *name);
 static ScriptData *script_variable_lookup (const char *name);
 static char *script_list_as_string (GList *list);
 static char *script_data_as_string (ScriptData *data);
-static int script_data_as_integer (ScriptData *data);
+static long script_data_as_integer (ScriptData *data);
 static void init_variables (const char **argv);
 static gpointer script_run (gpointer data);
+static gboolean check_conditional (ScriptConditional *conditional);
+static void script_error (const char *fmt, ...);
+static void script_warn (const char *fmt, ...);
 
 static void script_move (GList *args);
 static void script_goto (GList *args);
@@ -123,16 +128,13 @@ static const struct {
 
 /* global variables */
 gboolean script_running = FALSE;
-GHashTable *labels;
-GList *commands = NULL;
-
-// only used when parsing the script
-int curr_line_number;
 
 /* local variables */
 static GList *curr_command;
 static GHashTable *variables_table;
 static gboolean suspended = FALSE;
+static GHashTable *labels;
+static GList *commands = NULL;
 
 static GMutex *script_mutex = NULL;
 
@@ -277,6 +279,115 @@ init_variables (const char **argv)
 
 /*** local functions ***/
 
+static gboolean
+check_binary_expr (ScriptBinaryExpr *expr)
+{
+	switch (expr->op) {
+		case SCRIPT_OP_AND:
+			return check_conditional (expr->lhs)
+				&& check_conditional (expr->rhs);
+
+		case SCRIPT_OP_OR:
+			return check_conditional (expr->lhs)
+				|| check_conditional (expr->rhs);
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
+static gboolean
+check_unary_expr (ScriptUnaryExpr *expr)
+{
+	switch (expr->op) {
+		case SCRIPT_OP_NOT:
+			return !check_conditional (expr->rhs);
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
+static int
+script_data_compare (ScriptData *lhs, ScriptData *rhs)
+{
+	return 0;
+}
+
+static gboolean
+check_compare_expr (ScriptCompareExpr *expr)
+{
+	int result;
+
+	switch (expr->op) {
+		case SCRIPT_OP_GT:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result > 0;
+
+		case SCRIPT_OP_GTE:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result >= 0;
+
+		case SCRIPT_OP_LT:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result < 0;
+
+		case SCRIPT_OP_LTE:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result <= 0;
+
+		case SCRIPT_OP_EQUAL:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result == 0;
+
+		case SCRIPT_OP_NOTEQUAL:
+			result = script_data_compare (expr->lhs, expr->rhs);
+			return result != 0;
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
+static gboolean
+check_test_expr (ScriptTestExpr *expr)
+{
+	switch (expr->op) {
+		case SCRIPT_OP_EXISTS:
+			return script_variable_exists (script_data_as_string
+					(expr->rhs));
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
+static gboolean
+check_conditional (ScriptConditional *conditional)
+{
+	switch (conditional->type) {
+		case SCRIPT_BINARY_EXPR:
+			return check_binary_expr (conditional->expr.binary);
+
+		case SCRIPT_UNARY_EXPR:
+			return check_unary_expr (conditional->expr.unary);
+
+		case SCRIPT_COMPARE_EXPR:
+			return check_compare_expr (conditional->expr.compare);
+
+		case SCRIPT_TEST_EXPR:
+			return check_test_expr (conditional->expr.test);
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
 /* calls command_name with args and returns its return value */
 static void
 script_command_call (ScriptCommand *command)
@@ -301,8 +412,8 @@ script_command_call (ScriptCommand *command)
 	}
 
 	/* don't execute if depends_on doesn't exist */
-	if (command->depends_on != NULL) {
-		if (!script_variable_exists (command->depends_on)) {
+	if (command->conditional != NULL) {
+		if (!check_conditional (command->conditional)) {
 			return;
 		}
 	}
@@ -378,24 +489,20 @@ script_command_call (ScriptCommand *command)
 	}
 }
 
-/* runs the script that has already been loaded */
-static gpointer
-script_run (gpointer data)
+static void
+script_parse (char *position)
 {
-	char *position;
+	int line_number;
 	char *line;
 
-	script_running = TRUE;
-	suspended = FALSE;
-
-	position = data;
 	line = NULL;
-	curr_line_number = 0;
+	line_number = 0;
 
 	// parse the script
 	while (position != NULL && *position != '\0') {
 		char *end;
 		int len;
+		ScriptCommand *command;
 
 		end = strstr (position, "\n");
 
@@ -420,20 +527,35 @@ script_run (gpointer data)
 		} else {
 			position = NULL;
 		}
-		curr_line_number++;
+		line_number++;
 
 		debug ("script line: %s", line);
 		script_scan_string (line);
-		if (script_running && scriptparse () != 0) {
+		if (script_running && scriptparse (&command, line_number) != 0)
+		{
 			gdk_threads_enter ();
 			echo_f ("*** Parse error in script at line: %d ***\n",
-					curr_line_number);
+					line_number);
 			gdk_threads_leave ();
 			script_running = FALSE;
 			break;
 		}
+		if (command != NULL) {
+			commands = g_list_append (commands, command);
+		}
 	}
 	g_free (line);
+}
+
+/* runs the script that has already been loaded */
+static gpointer
+script_run (gpointer data)
+{
+
+	script_running = TRUE;
+	suspended = FALSE;
+
+	script_parse (data);
 	g_free (data);
 
         // wait until we're out of roundtime to start the script
@@ -559,31 +681,51 @@ script_data_as_string (ScriptData *data)
 			return g_strdup (data->value.as_string);
 
 		case SCRIPT_TYPE_INTEGER:
-			return itoa (data->value.as_integer);
+			return ltoa (data->value.as_integer);
 
 		case SCRIPT_TYPE_VARIABLE:
 			return script_data_as_string (script_variable_lookup
 					(data->value.as_string));
 
 		default:
-			debug ("unimplemented\n");
+			g_assert_not_reached ();
 			return g_strdup ("");
 	}
 }
 
 /* casts data to an integer */
-static int
+static long
 script_data_as_integer (ScriptData *data)
 {
 	switch (data->type) {
 		case SCRIPT_TYPE_STRING:
-			return atoi (data->value.as_string);
+			{
+				long result;
+				result = strtol (data->value.as_string, NULL,
+						10);
+				if (errno != 0) {
+					if (result == LONG_MAX
+							|| result == LONG_MIN) {
+						script_warn ("Number overflow");
+					} else if (result == 0) {
+						script_error ("Could not convert string to integer");
+					} else {
+						script_error ("Unknown error");
+					}
+				}
+				return result;
+			}
 
 		case SCRIPT_TYPE_INTEGER:
 			return data->value.as_integer;
 
+		case SCRIPT_TYPE_VARIABLE:
+			return script_data_as_integer (script_variable_lookup
+					(data->value.as_string));
+
 		default:
-			return atoi (script_data_as_string (data));
+			g_assert_not_reached ();
+			return 0;
 	}
 }
 
@@ -607,6 +749,27 @@ script_error (const char *fmt, ...)
 
 	gdk_threads_enter ();
 	echo_f ("*** Error in script at line %d: %s ***\n",
+			((ScriptCommand*)curr_command->data)->line_number, str);
+	gdk_threads_leave ();
+
+	g_free (str);
+}
+
+/* displays an error message when something goes wrong in a script and needs
+ * to be reported to the player
+ */
+static void
+script_warn (const char *fmt, ...)
+{
+	va_list list;
+	char *str;
+
+	va_start (list, fmt);
+	g_vasprintf (&str, fmt, list);
+	va_end (list);
+
+	gdk_threads_enter ();
+	echo_f ("*** Warning in script at line %d: %s ***\n",
 			((ScriptCommand*)curr_command->data)->line_number, str);
 	gdk_threads_leave ();
 
@@ -1129,7 +1292,7 @@ script_random (GList *args)
 	ScriptData *randdata;
 	int upper, lower;
 
-	if (randr == NULL) {
+	if (rand == NULL) {
 		rand = g_rand_new ();
 	}
 

@@ -33,69 +33,122 @@
 extern int scriptlex (void);
 
 /* local functions */
-static int scripterror (char *string);
-
-/* external variables */
-extern GList *commands;
-extern int curr_line_number;
+static int scripterror (ScriptCommand **command, int line_number, char *string);
 
 /* local variables */
 %}
 
 %union {
-	char *string;
-	GList *list;
-	ScriptCommand *command;
+	char			*string;
+	GList			*list;
+	ScriptData		*data;
+	ScriptCommand		*command;
+	ScriptConditional	*conditional;
+	ScriptBinaryOp		 binary_op;
+	ScriptUnaryOp		 unary_op;
+	ScriptCompareOp		 compare_op;
+	ScriptTestOp		 test_op;
 }
 
 %token <string> SCRIPT_LABEL SCRIPT_STRING SCRIPT_VARIABLE SCRIPT_IF_
-%token SCRIPT_EOL
+%token SCRIPT_EOL SCRIPT_IF SCRIPT_THEN
+%token <binary_op> SCRIPT_BINARY_OP
+%token <unary_op> SCRIPT_UNARY_OP
+%token <compare_op> SCRIPT_COMPARE_OP
+%token <test_op> SCRIPT_TEST_OP
 
+%type <command> line command exp
 %type <list> arg_list
-%type <command> command
+%type <conditional> conditional
+%type <data> script_data
+
+%parse-param { ScriptCommand **command }
+%parse-param { int line_number }
 %%
 parser:
-	line				{ YYACCEPT; }
+	line				{ *command = $1; YYACCEPT; }
 ;
 line:
-        exp SCRIPT_EOL			{ }
-        | SCRIPT_LABEL line		{ script_save_label ($1); }
+          exp SCRIPT_EOL		{ $$ = $1; }
+        | SCRIPT_LABEL line		{ $$ = $2; script_save_label ($1); }
 ;
-exp:	/* empty */			{
-		ScriptCommand *command;
-		command = g_new (ScriptCommand, 1);
-		command->line_number = curr_line_number;
-		command->command = NULL;
-		command->depends_on = NULL;
-		commands = g_list_append (commands, command); }
+exp:	/* empty */			{ $$ = NULL; }
         | command			{
-		$1->depends_on = NULL;
-		commands = g_list_append (commands, $1); }
+		$1->conditional = NULL;
+		$$ = $1; }
         | SCRIPT_IF_ command {
-		$2->depends_on = g_ascii_strdown ($1, -1);
-		commands = g_list_append (commands, $2); }
+		ScriptConditional *conditional;
+		ScriptTestExpr *test;
+		ScriptData *data;
+		data = g_new (ScriptData, 1);
+		data->type = SCRIPT_TYPE_STRING;
+		data->value.as_string = $1;
+		test = g_new (ScriptTestExpr, 1);
+		test->op = SCRIPT_OP_EXISTS;
+		test->rhs = data;
+		conditional = g_new (ScriptConditional, 1);
+		conditional->type = SCRIPT_TEST_EXPR;
+		conditional->expr.test = test;
+		$2->conditional = conditional;
+		$$ = $2; }
+	| SCRIPT_IF conditional SCRIPT_THEN command {
+		$4->conditional = $2;
+		$$ = $4; }
 ;
 command:
 	arg_list			{
 		ScriptCommand *command;
 		command = g_new (ScriptCommand, 1);
 		command->command = $1;
-		command->line_number = curr_line_number;
+		command->line_number = line_number;
 		$$ = command; }
 ;
 arg_list:
 	/* empty */			{ $$ = NULL; }
-        | SCRIPT_STRING arg_list	{
-		ScriptData *data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_STRING;
-		data->value.as_string = $1;
-		$$ = g_list_prepend ($2, data); }
-        | SCRIPT_VARIABLE arg_list      {
-		ScriptData *data;
-                data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_VARIABLE;
-		data->value.as_string = $1;
-		$$ = g_list_prepend ($2, data); }
+        | script_data arg_list		{
+		$$ = g_list_prepend ($2, $1); }
+;
+script_data:
+	  SCRIPT_STRING			{
+	  	$$ = g_new (ScriptData, 1);
+		$$->type = SCRIPT_TYPE_STRING;
+		$$->value.as_string = $1; }
+	| SCRIPT_VARIABLE		{
+		$$ = g_new (ScriptData, 1);
+		$$->type = SCRIPT_TYPE_VARIABLE;
+		$$->value.as_string = $1; }
+;
+conditional:
+	  conditional SCRIPT_BINARY_OP conditional	{
+	  	ScriptBinaryExpr *expr;
+		expr->op = $2;
+		expr->lhs = $1;
+		expr->rhs = $3;
+	  	$$ = g_new (ScriptConditional, 1);
+		$$->type = SCRIPT_BINARY_EXPR;
+		$$->expr.binary = expr; }
+	| SCRIPT_UNARY_OP conditional	{
+		ScriptUnaryExpr *expr;
+		expr->op = $1;
+		expr->rhs = $2;
+		$$ = g_new (ScriptConditional, 1);
+		$$->type = SCRIPT_UNARY_EXPR;
+		$$->expr.unary = expr; }
+	| script_data SCRIPT_COMPARE_OP script_data	{
+		ScriptCompareExpr *expr;
+		expr->op = $2;
+		expr->lhs = $1;
+		expr->rhs = $3;
+		$$ = g_new (ScriptConditional, 1);
+		$$->type = SCRIPT_COMPARE_EXPR;
+		$$->expr.compare = expr; }
+	| SCRIPT_TEST_OP script_data	{
+		ScriptTestExpr *expr;
+		expr->op = $1;
+		expr->rhs = $2;
+		$$ = g_new (ScriptConditional, 1);
+		$$->type = SCRIPT_TEST_EXPR;
+		$$->expr.test = expr; }
 ;
 %%
 
@@ -105,7 +158,7 @@ arg_list:
  * recognize]
  *
  */
-static int scripterror (char *string)
+static int scripterror (ScriptCommand **command, int line_number, char *string)
 {
         debug ("script parser error: %s\n", string);
         return 1;

@@ -60,7 +60,13 @@
      SCRIPT_STRING = 259,
      SCRIPT_VARIABLE = 260,
      SCRIPT_IF_ = 261,
-     SCRIPT_EOL = 262
+     SCRIPT_EOL = 262,
+     SCRIPT_IF = 263,
+     SCRIPT_THEN = 264,
+     SCRIPT_BINARY_OP = 265,
+     SCRIPT_UNARY_OP = 266,
+     SCRIPT_COMPARE_OP = 267,
+     SCRIPT_TEST_OP = 268
    };
 #endif
 /* Tokens.  */
@@ -69,6 +75,12 @@
 #define SCRIPT_VARIABLE 260
 #define SCRIPT_IF_ 261
 #define SCRIPT_EOL 262
+#define SCRIPT_IF 263
+#define SCRIPT_THEN 264
+#define SCRIPT_BINARY_OP 265
+#define SCRIPT_UNARY_OP 266
+#define SCRIPT_COMPARE_OP 267
+#define SCRIPT_TEST_OP 268
 
 
 
@@ -110,11 +122,7 @@
 extern int scriptlex (void);
 
 /* local functions */
-static int scripterror (char *string);
-
-/* external variables */
-extern GList *commands;
-extern int curr_line_number;
+static int scripterror (ScriptCommand **command, int line_number, char *string);
 
 /* local variables */
 
@@ -138,14 +146,20 @@ extern int curr_line_number;
 #endif
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 45 "script_parser.y"
+#line 41 "script_parser.y"
 typedef union YYSTYPE {
-	char *string;
-	GList *list;
-	ScriptCommand *command;
+	char			*string;
+	GList			*list;
+	ScriptData		*data;
+	ScriptCommand		*command;
+	ScriptConditional	*conditional;
+	ScriptBinaryOp		 binary_op;
+	ScriptUnaryOp		 unary_op;
+	ScriptCompareOp		 compare_op;
+	ScriptTestOp		 test_op;
 } YYSTYPE;
 /* Line 196 of yacc.c.  */
-#line 149 "script_parser.c"
+#line 163 "script_parser.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -157,7 +171,7 @@ typedef union YYSTYPE {
 
 
 /* Line 219 of yacc.c.  */
-#line 161 "script_parser.c"
+#line 175 "script_parser.c"
 
 #if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
 # define YYSIZE_T __SIZE_TYPE__
@@ -306,22 +320,22 @@ union yyalloc
 #endif
 
 /* YYFINAL -- State number of the termination state. */
-#define YYFINAL  14
+#define YYFINAL  18
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   11
+#define YYLAST   27
 
 /* YYNTOKENS -- Number of terminals. */
-#define YYNTOKENS  8
+#define YYNTOKENS  14
 /* YYNNTS -- Number of nonterminals. */
-#define YYNNTS  6
+#define YYNNTS  8
 /* YYNRULES -- Number of rules. */
-#define YYNRULES  11
+#define YYNRULES  17
 /* YYNRULES -- Number of states. */
-#define YYNSTATES  16
+#define YYNSTATES  29
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   262
+#define YYMAXUTOK   268
 
 #define YYTRANSLATE(YYX)						\
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -355,7 +369,7 @@ static const unsigned char yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7
+       5,     6,     7,     8,     9,    10,    11,    12,    13
 };
 
 #if YYDEBUG
@@ -363,23 +377,25 @@ static const unsigned char yytranslate[] =
    YYRHS.  */
 static const unsigned char yyprhs[] =
 {
-       0,     0,     3,     5,     8,    11,    12,    14,    17,    19,
-      20,    23
+       0,     0,     3,     5,     8,    11,    12,    14,    17,    22,
+      24,    25,    28,    30,    32,    36,    39,    43
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS. */
 static const yysigned_char yyrhs[] =
 {
-       9,     0,    -1,    10,    -1,    11,     7,    -1,     3,    10,
-      -1,    -1,    12,    -1,     6,    12,    -1,    13,    -1,    -1,
-       4,    13,    -1,     5,    13,    -1
+      15,     0,    -1,    16,    -1,    17,     7,    -1,     3,    16,
+      -1,    -1,    18,    -1,     6,    18,    -1,     8,    21,     9,
+      18,    -1,    19,    -1,    -1,    20,    19,    -1,     4,    -1,
+       5,    -1,    21,    10,    21,    -1,    11,    21,    -1,    20,
+      12,    20,    -1,    13,    20,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned char yyrline[] =
 {
-       0,    58,    58,    61,    62,    64,    71,    74,    79,    87,
-      88,    93
+       0,    69,    69,    72,    73,    75,    76,    79,    94,    99,
+     107,   108,   112,   116,   122,   130,   137,   145
 };
 #endif
 
@@ -389,8 +405,10 @@ static const unsigned char yyrline[] =
 static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "SCRIPT_LABEL", "SCRIPT_STRING",
-  "SCRIPT_VARIABLE", "SCRIPT_IF_", "SCRIPT_EOL", "$accept", "parser",
-  "line", "exp", "command", "arg_list", 0
+  "SCRIPT_VARIABLE", "SCRIPT_IF_", "SCRIPT_EOL", "SCRIPT_IF",
+  "SCRIPT_THEN", "SCRIPT_BINARY_OP", "SCRIPT_UNARY_OP",
+  "SCRIPT_COMPARE_OP", "SCRIPT_TEST_OP", "$accept", "parser", "line",
+  "exp", "command", "arg_list", "script_data", "conditional", 0
 };
 #endif
 
@@ -399,22 +417,23 @@ static const char *const yytname[] =
    token YYLEX-NUM.  */
 static const unsigned short int yytoknum[] =
 {
-       0,   256,   257,   258,   259,   260,   261,   262
+       0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
+     265,   266,   267,   268
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const unsigned char yyr1[] =
 {
-       0,     8,     9,    10,    10,    11,    11,    11,    12,    13,
-      13,    13
+       0,    14,    15,    16,    16,    17,    17,    17,    17,    18,
+      19,    19,    20,    20,    21,    21,    21,    21
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const unsigned char yyr2[] =
 {
-       0,     2,     1,     2,     2,     0,     1,     2,     1,     0,
-       2,     2
+       0,     2,     1,     2,     2,     0,     1,     2,     4,     1,
+       0,     2,     1,     1,     3,     2,     3,     2
 };
 
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
@@ -422,29 +441,31 @@ static const unsigned char yyr2[] =
    means the default is an error.  */
 static const unsigned char yydefact[] =
 {
-       5,     5,     9,     9,     9,     0,     2,     0,     6,     8,
-       4,    10,    11,     7,     1,     3
+       5,     5,    12,    13,    10,     0,     0,     2,     0,     6,
+       9,    10,     4,     7,     0,     0,     0,     0,     1,     3,
+      11,    15,    17,     0,    10,     0,    16,     8,    14
 };
 
 /* YYDEFGOTO[NTERM-NUM]. */
 static const yysigned_char yydefgoto[] =
 {
-      -1,     5,     6,     7,     8,     9
+      -1,     6,     7,     8,     9,    10,    11,    17
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -4
+#define YYPACT_NINF -13
 static const yysigned_char yypact[] =
 {
-      -3,    -3,     0,     0,     0,     8,    -4,     2,    -4,    -4,
-      -4,    -4,    -4,    -4,    -4,    -4
+      19,    19,   -13,   -13,    -1,     1,    11,   -13,     8,   -13,
+     -13,    -1,   -13,   -13,     1,    -1,     4,    -2,   -13,   -13,
+     -13,     7,   -13,    -1,    -1,     1,   -13,   -13,     7
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yysigned_char yypgoto[] =
 {
-      -4,    -4,     9,    -4,     7,     4
+     -13,   -13,    18,   -13,    -3,    15,    -5,   -12
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -454,22 +475,25 @@ static const yysigned_char yypgoto[] =
 #define YYTABLE_NINF -1
 static const unsigned char yytable[] =
 {
-       1,     2,     3,     4,     2,     3,    11,    12,    14,    15,
-      10,    13
+      16,    13,    21,     2,     3,     2,     3,    24,    25,    16,
+      22,    18,    14,    28,    15,    19,    23,    25,    26,    12,
+      16,    27,     1,     2,     3,     4,    20,     5
 };
 
 static const unsigned char yycheck[] =
 {
-       3,     4,     5,     6,     4,     5,     2,     3,     0,     7,
-       1,     4
+       5,     4,    14,     4,     5,     4,     5,     9,    10,    14,
+      15,     0,    11,    25,    13,     7,    12,    10,    23,     1,
+      25,    24,     3,     4,     5,     6,    11,     8
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const unsigned char yystos[] =
 {
-       0,     3,     4,     5,     6,     9,    10,    11,    12,    13,
-      10,    13,    13,    12,     0,     7
+       0,     3,     4,     5,     6,     8,    15,    16,    17,    18,
+      19,    20,    16,    18,    11,    13,    20,    21,     0,     7,
+      19,    21,    20,    12,     9,    10,    20,    18,    21
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -502,7 +526,7 @@ do								\
     }								\
   else								\
     {								\
-      yyerror (YY_("syntax error: cannot back up")); \
+      yyerror (command, line_number, YY_("syntax error: cannot back up")); \
       YYERROR;							\
     }								\
 while (0)
@@ -855,7 +879,7 @@ int yyparse ();
 # endif
 #else /* ! YYPARSE_PARAM */
 #if defined (__STDC__) || defined (__cplusplus)
-int yyparse (void);
+int yyparse (ScriptCommand **command, int line_number);
 #else
 int yyparse ();
 #endif
@@ -888,11 +912,12 @@ int yyparse (YYPARSE_PARAM)
 #else /* ! YYPARSE_PARAM */
 #if defined (__STDC__) || defined (__cplusplus)
 int
-yyparse (void)
+yyparse (ScriptCommand **command, int line_number)
 #else
 int
-yyparse ()
-    ;
+yyparse (command, line_number)
+    ScriptCommand **command;
+    int line_number;
 #endif
 #endif
 {
@@ -1139,77 +1164,139 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 58 "script_parser.y"
-    { YYACCEPT; }
+#line 69 "script_parser.y"
+    { *command = (yyvsp[0].command); YYACCEPT; }
     break;
 
   case 3:
-#line 61 "script_parser.y"
-    { }
+#line 72 "script_parser.y"
+    { (yyval.command) = (yyvsp[-1].command); }
     break;
 
   case 4:
-#line 62 "script_parser.y"
-    { script_save_label ((yyvsp[-1].string)); }
+#line 73 "script_parser.y"
+    { (yyval.command) = (yyvsp[0].command); script_save_label ((yyvsp[-1].string)); }
     break;
 
   case 5:
-#line 64 "script_parser.y"
-    {
-		ScriptCommand *command;
-		command = g_new (ScriptCommand, 1);
-		command->line_number = curr_line_number;
-		command->command = NULL;
-		command->depends_on = NULL;
-		commands = g_list_append (commands, command); }
+#line 75 "script_parser.y"
+    { (yyval.command) = NULL; }
     break;
 
   case 6:
-#line 71 "script_parser.y"
+#line 76 "script_parser.y"
     {
-		(yyvsp[0].command)->depends_on = NULL;
-		commands = g_list_append (commands, (yyvsp[0].command)); }
+		(yyvsp[0].command)->conditional = NULL;
+		(yyval.command) = (yyvsp[0].command); }
     break;
 
   case 7:
-#line 74 "script_parser.y"
+#line 79 "script_parser.y"
     {
-		(yyvsp[0].command)->depends_on = g_ascii_strdown ((yyvsp[-1].string), -1);
-		commands = g_list_append (commands, (yyvsp[0].command)); }
+		ScriptConditional *conditional;
+		ScriptTestExpr *test;
+		ScriptData *data;
+		data = g_new (ScriptData, 1);
+		data->type = SCRIPT_TYPE_STRING;
+		data->value.as_string = (yyvsp[-1].string);
+		test = g_new (ScriptTestExpr, 1);
+		test->op = SCRIPT_OP_EXISTS;
+		test->rhs = data;
+		conditional = g_new (ScriptConditional, 1);
+		conditional->type = SCRIPT_TEST_EXPR;
+		conditional->expr.test = test;
+		(yyvsp[0].command)->conditional = conditional;
+		(yyval.command) = (yyvsp[0].command); }
     break;
 
   case 8:
-#line 79 "script_parser.y"
+#line 94 "script_parser.y"
+    {
+		(yyvsp[0].command)->conditional = (yyvsp[-2].conditional);
+		(yyval.command) = (yyvsp[0].command); }
+    break;
+
+  case 9:
+#line 99 "script_parser.y"
     {
 		ScriptCommand *command;
 		command = g_new (ScriptCommand, 1);
 		command->command = (yyvsp[0].list);
-		command->line_number = curr_line_number;
+		command->line_number = line_number;
 		(yyval.command) = command; }
     break;
 
-  case 9:
-#line 87 "script_parser.y"
+  case 10:
+#line 107 "script_parser.y"
     { (yyval.list) = NULL; }
     break;
 
-  case 10:
-#line 88 "script_parser.y"
+  case 11:
+#line 108 "script_parser.y"
     {
-		ScriptData *data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_STRING;
-		data->value.as_string = (yyvsp[-1].string);
-		(yyval.list) = g_list_prepend ((yyvsp[0].list), data); }
+		(yyval.list) = g_list_prepend ((yyvsp[0].list), (yyvsp[-1].data)); }
     break;
 
-  case 11:
-#line 93 "script_parser.y"
+  case 12:
+#line 112 "script_parser.y"
     {
-		ScriptData *data;
-                data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_VARIABLE;
-		data->value.as_string = (yyvsp[-1].string);
-		(yyval.list) = g_list_prepend ((yyvsp[0].list), data); }
+	  	(yyval.data) = g_new (ScriptData, 1);
+		(yyval.data)->type = SCRIPT_TYPE_STRING;
+		(yyval.data)->value.as_string = (yyvsp[0].string); }
+    break;
+
+  case 13:
+#line 116 "script_parser.y"
+    {
+		(yyval.data) = g_new (ScriptData, 1);
+		(yyval.data)->type = SCRIPT_TYPE_VARIABLE;
+		(yyval.data)->value.as_string = (yyvsp[0].string); }
+    break;
+
+  case 14:
+#line 122 "script_parser.y"
+    {
+	  	ScriptBinaryExpr *expr;
+		expr->op = (yyvsp[-1].binary_op);
+		expr->lhs = (yyvsp[-2].conditional);
+		expr->rhs = (yyvsp[0].conditional);
+	  	(yyval.conditional) = g_new (ScriptConditional, 1);
+		(yyval.conditional)->type = SCRIPT_BINARY_EXPR;
+		(yyval.conditional)->expr.binary = expr; }
+    break;
+
+  case 15:
+#line 130 "script_parser.y"
+    {
+		ScriptUnaryExpr *expr;
+		expr->op = (yyvsp[-1].unary_op);
+		expr->rhs = (yyvsp[0].conditional);
+		(yyval.conditional) = g_new (ScriptConditional, 1);
+		(yyval.conditional)->type = SCRIPT_UNARY_EXPR;
+		(yyval.conditional)->expr.unary = expr; }
+    break;
+
+  case 16:
+#line 137 "script_parser.y"
+    {
+		ScriptCompareExpr *expr;
+		expr->op = (yyvsp[-1].compare_op);
+		expr->lhs = (yyvsp[-2].data);
+		expr->rhs = (yyvsp[0].data);
+		(yyval.conditional) = g_new (ScriptConditional, 1);
+		(yyval.conditional)->type = SCRIPT_COMPARE_EXPR;
+		(yyval.conditional)->expr.compare = expr; }
+    break;
+
+  case 17:
+#line 145 "script_parser.y"
+    {
+		ScriptTestExpr *expr;
+		expr->op = (yyvsp[-1].test_op);
+		expr->rhs = (yyvsp[0].data);
+		(yyval.conditional) = g_new (ScriptConditional, 1);
+		(yyval.conditional)->type = SCRIPT_TEST_EXPR;
+		(yyval.conditional)->expr.test = expr; }
     break;
 
 
@@ -1217,7 +1304,7 @@ yyreduce:
     }
 
 /* Line 1126 of yacc.c.  */
-#line 1221 "script_parser.c"
+#line 1308 "script_parser.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1343,18 +1430,18 @@ yyerrlab:
 		      yyf++;
 		    }
 		}
-	      yyerror (yymsg);
+	      yyerror (command, line_number, yymsg);
 	      YYSTACK_FREE (yymsg);
 	    }
 	  else
 	    {
-	      yyerror (YY_("syntax error"));
+	      yyerror (command, line_number, YY_("syntax error"));
 	      goto yyexhaustedlab;
 	    }
 	}
       else
 #endif /* YYERROR_VERBOSE */
-	yyerror (YY_("syntax error"));
+	yyerror (command, line_number, YY_("syntax error"));
     }
 
 
@@ -1462,7 +1549,7 @@ yyabortlab:
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (YY_("memory exhausted"));
+  yyerror (command, line_number, YY_("memory exhausted"));
   yyresult = 2;
   /* Fall through.  */
 #endif
@@ -1485,7 +1572,7 @@ yyreturn:
 }
 
 
-#line 100 "script_parser.y"
+#line 153 "script_parser.y"
 
 
 /*
@@ -1494,7 +1581,7 @@ yyreturn:
  * recognize]
  *
  */
-static int scripterror (char *string)
+static int scripterror (ScriptCommand **command, int line_number, char *string)
 {
         debug ("script parser error: %s\n", string);
         return 1;
