@@ -84,6 +84,8 @@ static void script_counter (GList *args);
 static void script_exit (GList *args);
 static void script_setvariable (GList *args);
 static void script_deletevariable (GList *args);
+static void script_call (GList *args);
+static void script_return (GList *args);
 static void script_random(GList *args);
 
 /* local constants */
@@ -109,6 +111,8 @@ static const struct {
 	{"counter", script_counter},
 	{"setvariable", script_setvariable},
 	{"deletevariable", script_deletevariable},
+	{"call", script_call},
+	{"return", script_return},
 	{"random", script_random},
 	{"addtohighlightstrings", NULL},
 	{"addtohighlightnames", NULL},
@@ -138,6 +142,7 @@ static GCond *suspend_cond = NULL;
 static GAsyncQueue *script_line_queue = NULL;
 
 static GList *match_list = NULL;
+static GSList *position_stack = NULL;
 
 /* initialize script variables */
 void
@@ -469,6 +474,11 @@ script_run (gpointer data)
 		g_list_free (match_list);
 		match_list = NULL;
 	}
+
+	if (position_stack != NULL) {
+		g_slist_free (position_stack);
+		position_stack = NULL;
+	}
         g_mutex_unlock (script_mutex);
 	g_list_free (commands);
 	commands = NULL;
@@ -588,6 +598,9 @@ script_error (const char *fmt, ...)
 	va_list list;
 	char *str;
 
+	// Stop the script
+	script_running = FALSE;
+
 	va_start (list, fmt);
 	g_vasprintf (&str, fmt, list);
 	va_end (list);
@@ -602,7 +615,7 @@ script_error (const char *fmt, ...)
 
 /* set the buffer to label, or stop execution until we find label */
 /* label must be lowercase and stripped of whitespace */
-static void
+static gboolean
 goto_label (const char *label)
 {
 	gpointer value;
@@ -615,10 +628,13 @@ goto_label (const char *label)
 		value = g_hash_table_lookup (labels, "labelerror");
 		if (value == NULL) {
 			script_error ("Could not find label \"%s\"", label);
+			return FALSE;
 		} else {
 			curr_command = value;
 		}
 	}
+
+	return TRUE;
 }
 
 static char *
@@ -714,19 +730,19 @@ script_matchre (GList *args)
 	match_data->label = script_data_as_string (args->data);
 	match_data->string = script_list_as_string (args->next);
 
-	g_mutex_lock (script_mutex);
         err = NULL;
         match_data->regex = pcre_compile (match_data->string, 0, &err,
                         &err_offset, NULL);
         if (err != NULL) {
                 script_error ("Invalid regex");
-		script_running = FALSE;
+		return;
         }
         match_data->regex_extra = pcre_study (match_data->regex, 0, &err);
         if (err != NULL) {
                 script_error ("Invalid regex");
-		script_running = FALSE;
+		return;
         }
+	g_mutex_lock (script_mutex);
 	match_list = g_list_append (match_list, match_data);
 	g_mutex_unlock (script_mutex);
 }
@@ -822,9 +838,6 @@ script_waitforre (GList *args)
         const char *err;
         int err_offset;
 
-	g_mutex_lock (script_mutex);
-        clear_line_queue ();
-
 	str = g_strstrip (g_ascii_strdown (script_list_as_string (args), -1));
 	debug ("waitforre regex: %s\n", str);
 
@@ -832,14 +845,16 @@ script_waitforre (GList *args)
         regex = pcre_compile (str, 0, &err, &err_offset, NULL);
         if (err != NULL) {
                 script_error ("Invalid regex");
-		script_running = FALSE;
+		return;
         }
         regex_extra = pcre_study (regex, 0, &err);
         if (err != NULL) {
                 script_error ("Invalid regex");
-		script_running = FALSE;
+		return;
         }
 
+	g_mutex_lock (script_mutex);
+        clear_line_queue ();
 	g_mutex_unlock (script_mutex);
 
 	/* we get woken up to check each string */
@@ -895,7 +910,6 @@ script_counter (GList *args)
         } else {
                 script_error ("Unrecognized counter operation \"%s\"",
 				operation);
-		script_running = FALSE;
 		return;
         }
 
@@ -920,7 +934,6 @@ script_goto (GList *args)
 	label = g_strstrip (g_ascii_strdown (script_list_as_string (args), -1));
         if (*label == '\0') {
                 script_error ("GOTO with no label specified");
-		script_running = FALSE;
                 return;
         }
         goto_label (label);
@@ -1041,7 +1054,7 @@ script_setvariable (GList *args)
 
 	if (args == NULL || args->data == NULL || args->next == NULL ||
 			args->next->data == NULL) {
-		script_error ("Not enough arguments to setvariable");
+		script_error ("Not enough arguments to SETVARIABLE");
 		return;
 	}
 
@@ -1062,7 +1075,7 @@ script_deletevariable (GList *args)
 	char *uservar_name;
 
 	if (args == NULL || args->data == NULL) {
-		script_error ("Not enough arguments to deletevariable");
+		script_error ("Not enough arguments to DELETEVARIABLE");
 		return;
 	}
 
@@ -1072,31 +1085,69 @@ script_deletevariable (GList *args)
         script_variable_unset (uservar_name);
 }
 
-/* assign %r a random number */
-/* http://members.cox.net/srice1/random/crandom.html */
+/* call a function (like goto, but returnable) */
+static void
+script_call (GList *args)
+{
+	char *label;
+
+	if (args == NULL || args->data == NULL) {
+		script_error ("Not enough arguments to CALL.");
+		return;
+	}
+
+	label = g_strstrip (g_ascii_strdown (args->data, -1));
+        if (*label == '\0') {
+                script_error ("CALL with no label specified");
+                return;
+        }
+	g_mutex_lock (script_mutex);
+	position_stack = g_slist_prepend (position_stack, curr_command);
+	g_mutex_unlock (script_mutex);
+
+	goto_label (label);
+}
+
+/* return from a function. return to the place the function was called from */
+static void
+script_return (GList *args)
+{
+	g_mutex_lock (script_mutex);
+	curr_command = position_stack->data;
+	position_stack = g_slist_delete_link (position_stack, position_stack);
+	g_mutex_unlock (script_mutex);
+}
+
+/* assign %r a random number in the range arg1 - arg2
+ * If only given 1 parameter, range is 0 - arg1
+ * if given no parameters 0 - 100
+ */
 static void
 script_random (GList *args)
 {
+	static GRand *rand = NULL;
 	ScriptData *randdata;
-	double randr;
-	int randresult;
+	int upper, lower;
 
-	if (args == NULL || args->data == NULL || args->next == NULL ||
-			args->next->data == NULL) {
-                script_error ("Not enough arguments for random");
-                return;
-        }
+	if (randr == NULL) {
+		rand = g_rand_new ();
+	}
+
+	if (args == NULL || args->data == NULL) {
+		lower = 0;
+		upper = 100;
+	} else if (args->next == NULL || args->next->data == NULL) {
+		lower = 0;
+		upper = script_data_as_integer (args->data);
+        } else {
+		lower = script_data_as_integer (args->data);
+		upper = script_data_as_integer (args->next->data);
+	}
 
 	randdata = (ScriptData *) g_new (ScriptData, 1);
 	randdata->type = SCRIPT_TYPE_INTEGER;
 
-	randr = ((double)rand()/((double)(RAND_MAX)+(double)(1)));
-	randresult = (randr * 
-			(script_data_as_integer(args->next->data) - 
-			 script_data_as_integer(args->data) + 1))
-			+ script_data_as_integer(args->data);
-	
-	randdata->value.as_integer = randresult;
+	randdata->value.as_integer = g_rand_int_range (rand, lower, upper);
 	
 	script_variable_set ("r", randdata);
 }
