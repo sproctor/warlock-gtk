@@ -55,7 +55,7 @@ extern gboolean script_running;
 	debug ("script if\n");
 	return SCRIPT_IF;
 }
-<IF>!=				{
+<IF>(!=|<>)			{
 	debug ("script notequal\n");
 	yylval.compare_op = SCRIPT_OP_NOTEQUAL;
 	return SCRIPT_COMPARE_OP;
@@ -63,6 +63,26 @@ extern gboolean script_running;
 <IF>(=|==)			{
 	debug ("script equal\n");
 	yylval.compare_op = SCRIPT_OP_EQUAL;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>\>				{
+	debug ("script greater than\n");
+	yylval.compare_op = SCRIPT_OP_GT;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>\>=				{
+	debug ("script greater than equal\n");
+	yylval.compare_op = SCRIPT_OP_GTE;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>\<				{
+	debug ("script less than\n");
+	yylval.compare_op = SCRIPT_OP_LT;
+	return SCRIPT_COMPARE_OP;
+}
+<IF>\<=				{
+	debug ("script less than equal\n");
+	yylval.compare_op = SCRIPT_OP_LTE;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>&&				{
@@ -79,6 +99,11 @@ extern gboolean script_running;
 	debug ("script NOT\n");
 	yylval.unary_op = SCRIPT_OP_NOT;
 	return SCRIPT_UNARY_OP;
+}
+<IF>exists			{
+	debug ("script exists\n");
+	yylval.test_op = SCRIPT_OP_EXISTS;
+	return SCRIPT_TEST_OP;
 }
 <IF>then			{
 	debug ("THEN\n");
