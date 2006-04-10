@@ -310,10 +310,47 @@ check_unary_expr (ScriptUnaryExpr *expr)
 	}
 }
 
+static gboolean
+script_data_can_cast_integer (ScriptData *data)
+{
+	if (data == NULL) return FALSE;
+
+	switch (data->type) {
+		case SCRIPT_TYPE_INTEGER:
+			return TRUE;
+
+		case SCRIPT_TYPE_STRING:
+			strtol (data->value.as_string, NULL, 10);
+			return errno == 0;
+
+		case SCRIPT_TYPE_VARIABLE:
+			return script_data_can_cast_integer
+				(script_variable_lookup
+				 (data->value.as_string));
+
+		default:
+			g_assert_not_reached ();
+			return FALSE;
+	}
+}
+
 static int
 script_data_compare (ScriptData *lhs, ScriptData *rhs)
 {
-	return 0;
+	if (script_data_can_cast_integer (lhs) && script_data_can_cast_integer
+			(rhs)) {
+		long l, r;
+		l = script_data_as_integer (lhs);
+		r = script_data_as_integer (rhs);
+		if (l > r) return 1;
+		if (l < r) return -1;
+		return 0;
+	} else {
+		char *l, *r;
+		l = script_data_as_string (lhs);
+		r = script_data_as_string (rhs);
+		return strcmp (l, r);
+	}
 }
 
 static gboolean
