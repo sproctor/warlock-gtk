@@ -1309,8 +1309,8 @@ script_random (GList *args)
 
 	randdata = (ScriptData *) g_new (ScriptData, 1);
 	randdata->type = SCRIPT_TYPE_INTEGER;
-
-	randdata->value.as_integer = g_rand_int_range (rand, lower, upper);
+	// 1 is added to upper so that it will include the upper number
+	randdata->value.as_integer = g_rand_int_range (rand, lower, upper + 1);
 	
 	script_variable_set ("r", randdata);
 }
