@@ -711,7 +711,7 @@ script_list_as_string (GList *list)
 static char *
 script_data_as_string (ScriptData *data)
 {
-        g_assert (data != NULL);
+	if (data == NULL) return g_strdup ("");
 
 	switch (data->type) {
 		case SCRIPT_TYPE_STRING:

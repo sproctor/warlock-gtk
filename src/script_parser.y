@@ -121,6 +121,7 @@ script_data:
 conditional:
 	  conditional SCRIPT_BINARY_OP conditional	{
 	  	ScriptBinaryExpr *expr;
+		expr = g_new (ScriptBinaryExpr, 1);
 		expr->op = $2;
 		expr->lhs = $1;
 		expr->rhs = $3;
@@ -129,6 +130,7 @@ conditional:
 		$$->expr.binary = expr; }
 	| SCRIPT_UNARY_OP conditional	{
 		ScriptUnaryExpr *expr;
+		g_new (ScriptUnaryExpr, 1);
 		expr->op = $1;
 		expr->rhs = $2;
 		$$ = g_new (ScriptConditional, 1);
@@ -136,6 +138,7 @@ conditional:
 		$$->expr.unary = expr; }
 	| script_data SCRIPT_COMPARE_OP script_data	{
 		ScriptCompareExpr *expr;
+		expr = g_new (ScriptCompareExpr, 1);
 		expr->op = $2;
 		expr->lhs = $1;
 		expr->rhs = $3;
@@ -144,6 +147,7 @@ conditional:
 		$$->expr.compare = expr; }
 	| SCRIPT_TEST_OP script_data	{
 		ScriptTestExpr *expr;
+		expr = g_new (ScriptTestExpr, 1);
 		expr->op = $1;
 		expr->rhs = $2;
 		$$ = g_new (ScriptConditional, 1);

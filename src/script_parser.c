@@ -395,7 +395,7 @@ static const yysigned_char yyrhs[] =
 static const unsigned char yyrline[] =
 {
        0,    69,    69,    72,    73,    75,    76,    79,    94,    99,
-     107,   108,   112,   116,   122,   130,   137,   145
+     107,   108,   112,   116,   122,   131,   139,   148
 };
 #endif
 
@@ -1257,6 +1257,7 @@ yyreduce:
 #line 122 "script_parser.y"
     {
 	  	ScriptBinaryExpr *expr;
+		expr = g_new (ScriptBinaryExpr, 1);
 		expr->op = (yyvsp[-1].binary_op);
 		expr->lhs = (yyvsp[-2].conditional);
 		expr->rhs = (yyvsp[0].conditional);
@@ -1266,9 +1267,10 @@ yyreduce:
     break;
 
   case 15:
-#line 130 "script_parser.y"
+#line 131 "script_parser.y"
     {
 		ScriptUnaryExpr *expr;
+		g_new (ScriptUnaryExpr, 1);
 		expr->op = (yyvsp[-1].unary_op);
 		expr->rhs = (yyvsp[0].conditional);
 		(yyval.conditional) = g_new (ScriptConditional, 1);
@@ -1277,9 +1279,10 @@ yyreduce:
     break;
 
   case 16:
-#line 137 "script_parser.y"
+#line 139 "script_parser.y"
     {
 		ScriptCompareExpr *expr;
+		expr = g_new (ScriptCompareExpr, 1);
 		expr->op = (yyvsp[-1].compare_op);
 		expr->lhs = (yyvsp[-2].data);
 		expr->rhs = (yyvsp[0].data);
@@ -1289,9 +1292,10 @@ yyreduce:
     break;
 
   case 17:
-#line 145 "script_parser.y"
+#line 148 "script_parser.y"
     {
 		ScriptTestExpr *expr;
+		expr = g_new (ScriptTestExpr, 1);
 		expr->op = (yyvsp[-1].test_op);
 		expr->rhs = (yyvsp[0].data);
 		(yyval.conditional) = g_new (ScriptConditional, 1);
@@ -1304,7 +1308,7 @@ yyreduce:
     }
 
 /* Line 1126 of yacc.c.  */
-#line 1308 "script_parser.c"
+#line 1312 "script_parser.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1572,7 +1576,7 @@ yyreturn:
 }
 
 
-#line 153 "script_parser.y"
+#line 157 "script_parser.y"
 
 
 /*
