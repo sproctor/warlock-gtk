@@ -1296,7 +1296,8 @@ script_call (GList *args)
 		return;
 	}
 
-	label = g_strstrip (g_ascii_strdown (args->data, -1));
+	label = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+				-1));
         if (*label == '\0') {
                 script_error ("CALL with no label specified");
                 return;
