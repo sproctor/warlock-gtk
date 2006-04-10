@@ -122,7 +122,8 @@
 extern int scriptlex (void);
 
 /* local functions */
-static int scripterror (ScriptCommand **command, int line_number, char *string);
+static int scripterror (ScriptCommand **command, const char **label,
+		int line_number, char *string);
 
 /* local variables */
 
@@ -146,7 +147,7 @@ static int scripterror (ScriptCommand **command, int line_number, char *string);
 #endif
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 41 "script_parser.y"
+#line 42 "script_parser.y"
 typedef union YYSTYPE {
 	char			*string;
 	GList			*list;
@@ -159,7 +160,7 @@ typedef union YYSTYPE {
 	ScriptTestOp		 test_op;
 } YYSTYPE;
 /* Line 196 of yacc.c.  */
-#line 163 "script_parser.c"
+#line 164 "script_parser.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -171,7 +172,7 @@ typedef union YYSTYPE {
 
 
 /* Line 219 of yacc.c.  */
-#line 175 "script_parser.c"
+#line 176 "script_parser.c"
 
 #if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
 # define YYSIZE_T __SIZE_TYPE__
@@ -394,8 +395,8 @@ static const yysigned_char yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned char yyrline[] =
 {
-       0,    69,    69,    72,    73,    75,    76,    79,    94,    99,
-     107,   108,   112,   116,   122,   131,   139,   148
+       0,    71,    71,    77,    78,    84,    89,    92,   107,   112,
+     118,   119,   123,   127,   133,   142,   150,   159
 };
 #endif
 
@@ -526,7 +527,7 @@ do								\
     }								\
   else								\
     {								\
-      yyerror (command, line_number, YY_("syntax error: cannot back up")); \
+      yyerror (command, label, line_number, YY_("syntax error: cannot back up")); \
       YYERROR;							\
     }								\
 while (0)
@@ -879,7 +880,7 @@ int yyparse ();
 # endif
 #else /* ! YYPARSE_PARAM */
 #if defined (__STDC__) || defined (__cplusplus)
-int yyparse (ScriptCommand **command, int line_number);
+int yyparse (ScriptCommand **command, const char **label, int line_number);
 #else
 int yyparse ();
 #endif
@@ -912,11 +913,12 @@ int yyparse (YYPARSE_PARAM)
 #else /* ! YYPARSE_PARAM */
 #if defined (__STDC__) || defined (__cplusplus)
 int
-yyparse (ScriptCommand **command, int line_number)
+yyparse (ScriptCommand **command, const char **label, int line_number)
 #else
 int
-yyparse (command, line_number)
+yyparse (command, label, line_number)
     ScriptCommand **command;
+    const char **label;
     int line_number;
 #endif
 #endif
@@ -1164,34 +1166,45 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 69 "script_parser.y"
-    { *command = (yyvsp[0].command); YYACCEPT; }
+#line 71 "script_parser.y"
+    {
+		(yyvsp[0].command)->line_number = line_number;
+		*command = (yyvsp[0].command);
+		YYACCEPT; }
     break;
 
   case 3:
-#line 72 "script_parser.y"
+#line 77 "script_parser.y"
     { (yyval.command) = (yyvsp[-1].command); }
     break;
 
   case 4:
-#line 73 "script_parser.y"
-    { (yyval.command) = (yyvsp[0].command); script_save_label ((yyvsp[-1].string)); }
+#line 78 "script_parser.y"
+    {
+		*label = (yyvsp[-1].string);
+		/* make sure that $2 is an actual value (it is safe to assume
+		 * currently, but if that changes, change this as well) */
+		(yyval.command) = (yyvsp[0].command); }
     break;
 
   case 5:
-#line 75 "script_parser.y"
-    { (yyval.command) = NULL; }
+#line 84 "script_parser.y"
+    {
+		(yyval.command) = g_new (ScriptCommand, 1);
+		(yyval.command)->conditional = NULL;
+		(yyval.command)->command = NULL;
+	}
     break;
 
   case 6:
-#line 76 "script_parser.y"
+#line 89 "script_parser.y"
     {
 		(yyvsp[0].command)->conditional = NULL;
 		(yyval.command) = (yyvsp[0].command); }
     break;
 
   case 7:
-#line 79 "script_parser.y"
+#line 92 "script_parser.y"
     {
 		ScriptConditional *conditional;
 		ScriptTestExpr *test;
@@ -1210,35 +1223,33 @@ yyreduce:
     break;
 
   case 8:
-#line 94 "script_parser.y"
+#line 107 "script_parser.y"
     {
 		(yyvsp[0].command)->conditional = (yyvsp[-2].conditional);
 		(yyval.command) = (yyvsp[0].command); }
     break;
 
   case 9:
-#line 99 "script_parser.y"
+#line 112 "script_parser.y"
     {
-		ScriptCommand *command;
-		command = g_new (ScriptCommand, 1);
-		command->command = (yyvsp[0].list);
-		command->line_number = line_number;
-		(yyval.command) = command; }
+		(yyval.command) = g_new (ScriptCommand, 1);
+		(yyval.command)->command = (yyvsp[0].list);
+		(yyval.command)->line_number = line_number; }
     break;
 
   case 10:
-#line 107 "script_parser.y"
+#line 118 "script_parser.y"
     { (yyval.list) = NULL; }
     break;
 
   case 11:
-#line 108 "script_parser.y"
+#line 119 "script_parser.y"
     {
 		(yyval.list) = g_list_prepend ((yyvsp[0].list), (yyvsp[-1].data)); }
     break;
 
   case 12:
-#line 112 "script_parser.y"
+#line 123 "script_parser.y"
     {
 	  	(yyval.data) = g_new (ScriptData, 1);
 		(yyval.data)->type = SCRIPT_TYPE_STRING;
@@ -1246,7 +1257,7 @@ yyreduce:
     break;
 
   case 13:
-#line 116 "script_parser.y"
+#line 127 "script_parser.y"
     {
 		(yyval.data) = g_new (ScriptData, 1);
 		(yyval.data)->type = SCRIPT_TYPE_VARIABLE;
@@ -1254,7 +1265,7 @@ yyreduce:
     break;
 
   case 14:
-#line 122 "script_parser.y"
+#line 133 "script_parser.y"
     {
 	  	ScriptBinaryExpr *expr;
 		expr = g_new (ScriptBinaryExpr, 1);
@@ -1267,7 +1278,7 @@ yyreduce:
     break;
 
   case 15:
-#line 131 "script_parser.y"
+#line 142 "script_parser.y"
     {
 		ScriptUnaryExpr *expr;
 		g_new (ScriptUnaryExpr, 1);
@@ -1279,7 +1290,7 @@ yyreduce:
     break;
 
   case 16:
-#line 139 "script_parser.y"
+#line 150 "script_parser.y"
     {
 		ScriptCompareExpr *expr;
 		expr = g_new (ScriptCompareExpr, 1);
@@ -1292,7 +1303,7 @@ yyreduce:
     break;
 
   case 17:
-#line 148 "script_parser.y"
+#line 159 "script_parser.y"
     {
 		ScriptTestExpr *expr;
 		expr = g_new (ScriptTestExpr, 1);
@@ -1308,7 +1319,7 @@ yyreduce:
     }
 
 /* Line 1126 of yacc.c.  */
-#line 1312 "script_parser.c"
+#line 1323 "script_parser.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1434,18 +1445,18 @@ yyerrlab:
 		      yyf++;
 		    }
 		}
-	      yyerror (command, line_number, yymsg);
+	      yyerror (command, label, line_number, yymsg);
 	      YYSTACK_FREE (yymsg);
 	    }
 	  else
 	    {
-	      yyerror (command, line_number, YY_("syntax error"));
+	      yyerror (command, label, line_number, YY_("syntax error"));
 	      goto yyexhaustedlab;
 	    }
 	}
       else
 #endif /* YYERROR_VERBOSE */
-	yyerror (command, line_number, YY_("syntax error"));
+	yyerror (command, label, line_number, YY_("syntax error"));
     }
 
 
@@ -1553,7 +1564,7 @@ yyabortlab:
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (command, line_number, YY_("memory exhausted"));
+  yyerror (command, label, line_number, YY_("memory exhausted"));
   yyresult = 2;
   /* Fall through.  */
 #endif
@@ -1576,7 +1587,7 @@ yyreturn:
 }
 
 
-#line 157 "script_parser.y"
+#line 168 "script_parser.y"
 
 
 /*
@@ -1585,7 +1596,8 @@ yyreturn:
  * recognize]
  *
  */
-static int scripterror (ScriptCommand **command, int line_number, char *string)
+static int scripterror (ScriptCommand **command, const char **label,
+		int line_number, char *string)
 {
         debug ("script parser error: %s\n", string);
         return 1;

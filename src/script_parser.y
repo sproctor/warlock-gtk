@@ -33,7 +33,8 @@
 extern int scriptlex (void);
 
 /* local functions */
-static int scripterror (ScriptCommand **command, int line_number, char *string);
+static int scripterror (ScriptCommand **command, const char **label,
+		int line_number, char *string);
 
 /* local variables */
 %}
@@ -63,16 +64,28 @@ static int scripterror (ScriptCommand **command, int line_number, char *string);
 %type <data> script_data
 
 %parse-param { ScriptCommand **command }
+%parse-param { const char **label }
 %parse-param { int line_number }
 %%
 parser:
-	line				{ *command = $1; YYACCEPT; }
+	line				{
+		$1->line_number = line_number;
+		*command = $1;
+		YYACCEPT; }
 ;
 line:
           exp SCRIPT_EOL		{ $$ = $1; }
-        | SCRIPT_LABEL line		{ $$ = $2; script_save_label ($1); }
+        | SCRIPT_LABEL line		{
+		*label = $1;
+		/* make sure that $2 is an actual value (it is safe to assume
+		 * currently, but if that changes, change this as well) */
+		$$ = $2; }
 ;
-exp:	/* empty */			{ $$ = NULL; }
+exp:	/* empty */			{
+		$$ = g_new (ScriptCommand, 1);
+		$$->conditional = NULL;
+		$$->command = NULL;
+	}
         | command			{
 		$1->conditional = NULL;
 		$$ = $1; }
@@ -97,11 +110,9 @@ exp:	/* empty */			{ $$ = NULL; }
 ;
 command:
 	arg_list			{
-		ScriptCommand *command;
-		command = g_new (ScriptCommand, 1);
-		command->command = $1;
-		command->line_number = line_number;
-		$$ = command; }
+		$$ = g_new (ScriptCommand, 1);
+		$$->command = $1;
+		$$->line_number = line_number; }
 ;
 arg_list:
 	/* empty */			{ $$ = NULL; }
@@ -162,7 +173,8 @@ conditional:
  * recognize]
  *
  */
-static int scripterror (ScriptCommand **command, int line_number, char *string)
+static int scripterror (ScriptCommand **command, const char **label,
+		int line_number, char *string)
 {
         debug ("script parser error: %s\n", string);
         return 1;

@@ -59,7 +59,7 @@
 
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 41 "script_parser.y"
+#line 42 "script_parser.y"
 typedef union YYSTYPE {
 	char			*string;
 	GList			*list;

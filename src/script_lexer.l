@@ -36,16 +36,15 @@ extern gboolean script_running;
 %}
 
 %option prefix="script" nounput case-insensitive stack noyy_top_state noyywrap
-%x VAR COMMENT STRING IF IF_ QUOTE
+%x VAR COMMENT IF IF_ QUOTE COMMAND
 
 %%
-<*>(\n|\r\n)			{
-	while (YY_START != INITIAL) {
-		yy_pop_state ();
-	}
+<COMMAND>(\n|\r\n)		{
+	yy_pop_state ();
 	debug ("script eol\n");
 	return SCRIPT_EOL;
 }
+<INITIAL>(\n|\r\n)		{ return SCRIPT_EOL; }
 <INITIAL>if_			{
         yy_push_state (IF_);
         debug ("script if_\n");
@@ -139,9 +138,8 @@ extern gboolean script_running;
 	debug ("script string: %s\n", yylval.string);
 	return SCRIPT_STRING;
 }
-<INITIAL,IF>\"			{
+<IF>\"			{
 	yy_push_state (QUOTE);
-	yymore ();
 }
 <QUOTE>\"			{ yy_pop_state (); }
 <QUOTE>[^"%\r\n]+		{
@@ -150,15 +148,16 @@ extern gboolean script_running;
 	return SCRIPT_STRING;
 }
 <INITIAL>[[:alpha:]]		{
-	yy_push_state (STRING);
+	yy_push_state (COMMAND);
+	debug ("script starting command");
 	yymore ();
 }
-<STRING>[^%\r\n]+		{
+<COMMAND>[^%\r\n]+		{
         yylval.string = lexer_string ();
         debug ("script string: %s\n", yylval.string);
         return SCRIPT_STRING;
 }
-<STRING,IF,INITIAL,QUOTE>%		{
+<IF,COMMAND,QUOTE>%		{
 	yy_push_state (VAR);
 }
 <IF>[[:alnum:]]+	{
@@ -168,4 +167,8 @@ extern gboolean script_running;
 }
 <INITIAL,IF>[[:blank:]]+		{}
 .				debug ("Unhandled char: %s\n", lexer_string ());
+(\n|\r\n)				{
+	debug ("Unexpected newline\n");
+	g_assert_not_reached ();
+}
 %%

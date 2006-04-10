@@ -94,7 +94,6 @@ struct _ScriptTestExpr {
 };
 
 void script_load (const char *filename, int argc, const char **argv);
-void script_save_label (const char *label);
 void script_moved (void);
 void script_match_string (const char *string);
 void script_kill (void);

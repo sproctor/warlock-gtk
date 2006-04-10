@@ -43,7 +43,8 @@
 #define SCRIPT_TIMEOUT  100000
 
 /* external variables */
-extern int scriptparse (ScriptCommand **command, int line_number);
+extern int scriptparse (ScriptCommand **command, const char **label,
+		int line_number);
 extern int script_scan_string (const char*);
 
 /* local data types */
@@ -130,7 +131,7 @@ static const struct {
 gboolean script_running = FALSE;
 
 /* local variables */
-static GList *curr_command;
+static GList *curr_command, *next_command;
 static GHashTable *variables_table;
 static gboolean suspended = FALSE;
 static GHashTable *labels;
@@ -189,13 +190,12 @@ script_toggle_suspend (void)
 }
 
 /* associates the label with the current position in the command list */
-void
+static void
 script_save_label (const char *label)
 {
 	char *real_label;
 
 	real_label = g_ascii_strdown (label, -1);
-
 	g_hash_table_insert (labels, real_label, g_list_last (commands));
 }
 
@@ -540,6 +540,7 @@ script_parse (char *position)
 		char *end;
 		int len;
 		ScriptCommand *command;
+		const char *label;
 
 		end = strstr (position, "\n");
 
@@ -568,7 +569,9 @@ script_parse (char *position)
 
 		debug ("script line: %s", line);
 		script_scan_string (line);
-		if (script_running && scriptparse (&command, line_number) != 0)
+		label = NULL;
+		if (script_running && scriptparse (&command, &label,
+					line_number) != 0)
 		{
 			gdk_threads_enter ();
 			echo_f ("*** Parse error in script at line: %d ***\n",
@@ -577,9 +580,12 @@ script_parse (char *position)
 			script_running = FALSE;
 			break;
 		}
-		if (command != NULL) {
-			commands = g_list_append (commands, command);
-		}
+		g_assert (command != NULL);
+		g_mutex_lock (script_mutex);
+		commands = g_list_append (commands, command);
+		if (label != NULL)
+			script_save_label (label);
+		g_mutex_unlock (script_mutex);
 	}
 	g_free (line);
 }
@@ -600,7 +606,8 @@ script_run (gpointer data)
 
 	// execute the script
 	for (curr_command = commands; curr_command != NULL;
-			curr_command = curr_command->next) {
+			curr_command = next_command) {
+		next_command = curr_command->next;
 		if (!script_running) {
 			break;
 		}
@@ -823,14 +830,14 @@ goto_label (const char *label)
 	value = g_hash_table_lookup (labels, label);
 
 	if (value != NULL) {
-		curr_command = value;
+		next_command = value;
 	} else {
 		value = g_hash_table_lookup (labels, "labelerror");
 		if (value == NULL) {
 			script_error ("Could not find label \"%s\"", label);
 			return FALSE;
 		} else {
-			curr_command = value;
+			next_command = value;
 		}
 	}
 
@@ -1303,7 +1310,7 @@ script_call (GList *args)
                 return;
         }
 	g_mutex_lock (script_mutex);
-	position_stack = g_slist_prepend (position_stack, curr_command);
+	position_stack = g_slist_prepend (position_stack, next_command);
 	g_mutex_unlock (script_mutex);
 
 	goto_label (label);
@@ -1314,7 +1321,7 @@ static void
 script_return (GList *args)
 {
 	g_mutex_lock (script_mutex);
-	curr_command = position_stack->data;
+	next_command = position_stack->data;
 	position_stack = g_slist_delete_link (position_stack, position_stack);
 	g_mutex_unlock (script_mutex);
 }
