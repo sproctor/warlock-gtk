@@ -39,7 +39,7 @@ extern gboolean script_running;
 %x VAR COMMENT IF IF_ QUOTE COMMAND
 
 %%
-<COMMAND>(\n|\r\n)		{
+<COMMAND,COMMENT>(\n|\r\n)		{
 	yy_pop_state ();
 	debug ("script eol\n");
 	return SCRIPT_EOL;
@@ -149,7 +149,7 @@ extern gboolean script_running;
 }
 <INITIAL>[[:alpha:]]		{
 	yy_push_state (COMMAND);
-	debug ("script starting command");
+	debug ("script starting command\n");
 	yymore ();
 }
 <COMMAND>[^%\r\n]+		{
@@ -166,9 +166,9 @@ extern gboolean script_running;
 	return SCRIPT_STRING;
 }
 <INITIAL,IF>[[:blank:]]+		{}
-.				debug ("Unhandled char: %s\n", lexer_string ());
-(\n|\r\n)				{
+<*>(\n|\r\n)				{
 	debug ("Unexpected newline\n");
 	g_assert_not_reached ();
 }
+<*>.				debug ("Unhandled char: %s\n", lexer_string ());
 %%
