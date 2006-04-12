@@ -313,25 +313,42 @@ check_unary_expr (ScriptUnaryExpr *expr)
 static gboolean
 script_data_can_cast_integer (ScriptData *data)
 {
+	gboolean rv;
+
 	if (data == NULL) return FALSE;
 
 	switch (data->type) {
 		case SCRIPT_TYPE_INTEGER:
-			return TRUE;
+			rv = TRUE;
+			break;
 
 		case SCRIPT_TYPE_STRING:
-			strtol (data->value.as_string, NULL, 10);
-			return errno == 0;
+			{
+				char *end;
+				errno = 0;
+				strtol (data->value.as_string, &end, 10);
+				debug ("Errno: %d\n", errno);
+				if (errno != 0 || end == data->value.as_string)
+				{
+					rv = FALSE;
+				} else {
+					rv = TRUE;
+				}
+				errno = 0;
+			}
+			break;
 
 		case SCRIPT_TYPE_VARIABLE:
-			return script_data_can_cast_integer
-				(script_variable_lookup
-				 (data->value.as_string));
+			rv = script_data_can_cast_integer (
+					script_variable_lookup (
+						data->value.as_string));
+			break;
 
 		default:
 			g_assert_not_reached ();
-			return FALSE;
+			rv = FALSE;
 	}
+	return rv;
 }
 
 static int
