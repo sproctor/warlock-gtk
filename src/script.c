@@ -254,6 +254,30 @@ script_got_prompt (void)
         g_cond_broadcast (wait_cond);
 }
 
+static ScriptData *
+string_to_script_data (char *str)
+{
+	ScriptData *data;
+
+	data = g_new (ScriptData, 1);
+	data->type = SCRIPT_TYPE_STRING;
+	data->value.as_string = str;
+
+	return data;
+}
+
+static ScriptData *
+integer_to_script_data (int n)
+{
+	ScriptData *data;
+
+	data = g_new (ScriptData, 1);
+	data->type = SCRIPT_TYPE_INTEGER;
+	data->value.as_integer = n;
+
+	return data;
+}
+
 /* initializes the variable table with the arguments given to the script
  * "1" is the first arg, "2" is the second, etc.
  */
@@ -268,9 +292,7 @@ init_variables (const char **argv)
                 
 		name = itoa (i + 1);
 
-		var = g_new (ScriptData, 1);
-		var->type = SCRIPT_TYPE_STRING;
-		var->value.as_string = g_strdup (argv[i]);
+		var = string_to_script_data (g_strdup (argv[i]));
 
 		debug ("adding %s = %s\n", name, argv[i]);
 		script_variable_set (name, var);
@@ -521,10 +543,8 @@ script_command_call (ScriptCommand *command)
 	while ((matches = pcre_exec (args_regexp, NULL, command_string, len,
 					pmatch[1], 0, pmatch, 6)) > 0) {
 		ScriptData *data;
-		data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_STRING;
-		data->value.as_string = g_ascii_strdown (command_string
-				+ pmatch[2], pmatch[3] - pmatch[2]);
+		data = string_to_script_data (g_ascii_strdown (command_string
+					+ pmatch[2], pmatch[3] - pmatch[2]));
 		args = g_list_append (args, data);
 	}
 					
@@ -971,6 +991,30 @@ script_matchre (GList *args)
 	g_mutex_unlock (script_mutex);
 }
 
+/* match a line against a regexp */
+static gboolean
+regexp_match (pcre *regex, pcre_extra *regex_extra, char *line)
+{
+	int n_matches;
+	int matches[32 * 3];
+
+	n_matches = pcre_exec (regex, regex_extra, line, strlen (line), 0, 0,
+			matches, 32 * 3);
+	if (n_matches >= 0) {
+		int i;
+		for (i = 0; i <= n_matches; i++) {
+			char name[10];
+			ScriptData *data;
+			g_snprintf (name, 10, "match%d", i);
+			data = string_to_script_data (g_strndup (
+						line + matches[i * 2],
+						matches[i * 2 + 1]));
+		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /* waits for a match callback to return, then clears them out */
 static void
 script_matchwait (GList *args)
@@ -1007,10 +1051,9 @@ script_matchwait (GList *args)
                                         break;
                                 }
                         } else {
-                                if (pcre_exec (match_data->regex,
-                                                        match_data->regex_extra,
-                                                        line, strlen(line), 0,
-                                                        0, NULL, 0) >= 0) {
+				if (regexp_match (match_data->regex,
+							match_data->regex_extra,
+							line)) {
                                         goto_label (match_data->label);
                                         g_list_free (match_list);
                                         match_list = NULL;
@@ -1084,8 +1127,7 @@ script_waitforre (GList *args)
 	/* we get woken up to check each string */
         do {
                 line = get_line ();
-        } while (line != NULL && pcre_exec (regex, regex_extra, line,
-				strlen(line), 0, 0, NULL, 0) < 0);
+        } while (line != NULL && !regexp_match (regex, regex_extra, line));
 
         // wait for the roundtime to end
 	warlock_roundtime_wait (&script_running);	
@@ -1095,7 +1137,8 @@ script_waitforre (GList *args)
 static void
 script_counter (GList *args)
 {
-	ScriptData *old_counter, *new_counter;
+	ScriptData *old_counter;
+	int new_counter;
 	char *operation;
 	int rhs;
 
@@ -1107,14 +1150,10 @@ script_counter (GList *args)
 
 	old_counter = script_variable_lookup ("c");
 
-        new_counter = (ScriptData *) g_new (ScriptData, 1);
-        new_counter->type = SCRIPT_TYPE_INTEGER;
-
 	if (old_counter == NULL) {
-		new_counter->value.as_integer = 0;
+		new_counter = 0;
 	} else {
-                new_counter->value.as_integer = script_data_as_integer
-                        (old_counter);
+                new_counter = script_data_as_integer (old_counter);
         }
 
         rhs = script_data_as_integer (args->next->data);
@@ -1122,22 +1161,22 @@ script_counter (GList *args)
 				(args->data), -1));
 
         if (strcmp(operation, "set") == 0) {
-                new_counter->value.as_integer = rhs;
+                new_counter = rhs;
         } else if (strcmp(operation, "add") == 0) {
-                new_counter->value.as_integer += rhs;
+                new_counter += rhs;
         } else if (strcmp(operation, "subtract") == 0) {
-                new_counter->value.as_integer -= rhs;
+                new_counter -= rhs;
         } else if (strcmp(operation, "multiply") == 0) {
-                new_counter->value.as_integer *= rhs;
+                new_counter *= rhs;
         } else if (strcmp(operation, "divide") == 0) {
-                new_counter->value.as_integer /= rhs;
+                new_counter /= rhs;
         } else {
                 script_error ("Unrecognized counter operation \"%s\"",
 				operation);
 		return;
         }
 
-        script_variable_set ("c", new_counter);
+        script_variable_set ("c", integer_to_script_data (new_counter));
 }
 
 /* send the strings to the server */
@@ -1250,9 +1289,7 @@ script_save (GList *args)
 {
         ScriptData *data;
 
-        data = g_new (ScriptData, 1);
-        data->type = SCRIPT_TYPE_STRING;
-	data->value.as_string = script_list_as_string (args);
+        data = string_to_script_data (script_list_as_string (args));
         if (*data->value.as_string == '"' || *data->value.as_string == '\'') {
                 char c;
                 char *tmp;
@@ -1273,8 +1310,8 @@ script_save (GList *args)
 static void
 script_setvariable (GList *args)
 {
-	ScriptData *uservar_value;
-	char *uservar_name;
+	ScriptData *value;
+	char *name;
 
 	if (args == NULL || args->data == NULL || args->next == NULL ||
 			args->next->data == NULL) {
@@ -1282,31 +1319,29 @@ script_setvariable (GList *args)
 		return;
 	}
 
-	uservar_name = g_strstrip (g_ascii_strdown (script_data_as_string
-				(args->data), -1));
+	name = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+				-1));
 
-	uservar_value = (ScriptData *)g_new (ScriptData, 1);
-	uservar_value->type = SCRIPT_TYPE_STRING;
-	uservar_value->value.as_string = g_strstrip (script_list_as_string
-			(args->next));
-        script_variable_set (uservar_name, uservar_value);
+	value = string_to_script_data (g_strstrip (script_list_as_string
+			(args->next)));
+        script_variable_set (name, value);
 }
 
 /* delete user-created variables */
 static void
 script_deletevariable (GList *args)
 {
-	char *uservar_name;
+	char *name;
 
 	if (args == NULL || args->data == NULL) {
 		script_error ("Not enough arguments to DELETEVARIABLE");
 		return;
 	}
 
-	uservar_name = g_strstrip (g_ascii_strdown (script_data_as_string
-				(args->data), -1));
+	name = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+				-1));
 
-        script_variable_unset (uservar_name);
+        script_variable_unset (name);
 }
 
 /* call a function (like goto, but returnable) */
@@ -1369,10 +1404,9 @@ script_random (GList *args)
 		upper = script_data_as_integer (args->next->data);
 	}
 
-	randdata = (ScriptData *) g_new (ScriptData, 1);
-	randdata->type = SCRIPT_TYPE_INTEGER;
 	// 1 is added to upper so that it will include the upper number
-	randdata->value.as_integer = g_rand_int_range (rand, lower, upper + 1);
+	randdata = integer_to_script_data (g_rand_int_range (rand, lower,
+				upper + 1));
 	
 	script_variable_set ("r", randdata);
 }
