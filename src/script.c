@@ -63,9 +63,9 @@ static void script_variable_set (const char *name, ScriptData *data);
 static void script_command_call (ScriptCommand *command);
 static gboolean script_variable_exists (const char *name);
 static ScriptData *script_variable_lookup (const char *name);
-static char *script_list_as_string (GList *list);
-static char *script_data_as_string (ScriptData *data);
-static long script_data_as_integer (ScriptData *data);
+static char *script_list_to_string (GList *list);
+static char *script_data_to_string (ScriptData *data);
+static long script_data_to_integer (ScriptData *data);
 static void init_variables (const char **argv);
 static gpointer script_run (gpointer data);
 static gboolean check_conditional (ScriptConditional *conditional);
@@ -379,15 +379,15 @@ script_data_compare (ScriptData *lhs, ScriptData *rhs)
 	if (script_data_can_cast_integer (lhs) && script_data_can_cast_integer
 			(rhs)) {
 		long l, r;
-		l = script_data_as_integer (lhs);
-		r = script_data_as_integer (rhs);
+		l = script_data_to_integer (lhs);
+		r = script_data_to_integer (rhs);
 		if (l > r) return 1;
 		if (l < r) return -1;
 		return 0;
 	} else {
 		char *l, *r;
-		l = script_data_as_string (lhs);
-		r = script_data_as_string (rhs);
+		l = script_data_to_string (lhs);
+		r = script_data_to_string (rhs);
 		return strcmp (l, r);
 	}
 }
@@ -433,7 +433,7 @@ check_test_expr (ScriptTestExpr *expr)
 {
 	switch (expr->op) {
 		case SCRIPT_OP_EXISTS:
-			return script_variable_exists (script_data_as_string
+			return script_variable_exists (script_data_to_string
 					(expr->rhs));
 
 		default:
@@ -494,7 +494,7 @@ script_command_call (ScriptCommand *command)
 		}
 	}
 
-	command_string = script_list_as_string (command->command);
+	command_string = script_list_to_string (command->command);
 	len = strlen (command_string);
 
 	/* compile the command name regexp if we haven't done it yet */
@@ -736,15 +736,15 @@ script_variable_set (const char *name, ScriptData *data)
         g_hash_table_insert (variables_table, g_strdup (name), data);
 }
 
-/* helper for script_data_as_string, casts a list into a string */
+/* helper for script_data_to_string, casts a list into a string */
 static char *
-script_list_as_string (GList *list)
+script_list_to_string (GList *list)
 {
 	GString *buffer;
 
 	buffer = g_string_new ("");
 	while (list != NULL) {
-		buffer = g_string_append (buffer, script_data_as_string
+		buffer = g_string_append (buffer, script_data_to_string
                                 (list->data));
 		list = list->next;
 	}
@@ -753,7 +753,7 @@ script_list_as_string (GList *list)
 
 /* casts data to a string */
 static char *
-script_data_as_string (ScriptData *data)
+script_data_to_string (ScriptData *data)
 {
 	if (data == NULL) return g_strdup ("");
 
@@ -765,7 +765,7 @@ script_data_as_string (ScriptData *data)
 			return ltoa (data->value.as_integer);
 
 		case SCRIPT_TYPE_VARIABLE:
-			return script_data_as_string (script_variable_lookup
+			return script_data_to_string (script_variable_lookup
 					(data->value.as_string));
 
 		default:
@@ -776,7 +776,7 @@ script_data_as_string (ScriptData *data)
 
 /* casts data to an integer */
 static long
-script_data_as_integer (ScriptData *data)
+script_data_to_integer (ScriptData *data)
 {
 	switch (data->type) {
 		case SCRIPT_TYPE_STRING:
@@ -801,7 +801,7 @@ script_data_as_integer (ScriptData *data)
 			return data->value.as_integer;
 
 		case SCRIPT_TYPE_VARIABLE:
-			return script_data_as_integer (script_variable_lookup
+			return script_data_to_integer (script_variable_lookup
 					(data->value.as_string));
 
 		default:
@@ -948,9 +948,9 @@ script_match (GList *args)
 
 	match_data = g_new (MatchData, 1);
 
-	match_data->label = g_strstrip (g_ascii_strdown (script_data_as_string
+	match_data->label = g_strstrip (g_ascii_strdown (script_data_to_string
 				(args->data), -1));
-	match_data->string = g_strstrip (g_ascii_strdown (script_list_as_string
+	match_data->string = g_strstrip (g_ascii_strdown (script_list_to_string
 				(args->next), -1));
 
 	g_mutex_lock (script_mutex);
@@ -971,8 +971,8 @@ script_matchre (GList *args)
 
 	match_data = g_new (MatchData, 1);
 
-	match_data->label = script_data_as_string (args->data);
-	match_data->string = script_list_as_string (args->next);
+	match_data->label = script_data_to_string (args->data);
+	match_data->string = script_list_to_string (args->next);
 
         err = NULL;
         match_data->regex = pcre_compile (match_data->string, 0, &err,
@@ -1077,7 +1077,7 @@ script_waitfor (GList *args)
 
 	g_mutex_lock (script_mutex);
 
-	waitfor_string = g_strstrip (g_ascii_strdown (script_list_as_string
+	waitfor_string = g_strstrip (g_ascii_strdown (script_list_to_string
 				(args), -1));
 	debug ("waitfor string: %s\n", waitfor_string);
 
@@ -1105,7 +1105,7 @@ script_waitforre (GList *args)
         const char *err;
         int err_offset;
 
-	str = g_strstrip (g_ascii_strdown (script_list_as_string (args), -1));
+	str = g_strstrip (g_ascii_strdown (script_list_to_string (args), -1));
 	debug ("waitforre regex: %s\n", str);
 
         err = NULL;
@@ -1153,11 +1153,11 @@ script_counter (GList *args)
 	if (old_counter == NULL) {
 		new_counter = 0;
 	} else {
-                new_counter = script_data_as_integer (old_counter);
+                new_counter = script_data_to_integer (old_counter);
         }
 
-        rhs = script_data_as_integer (args->next->data);
-	operation = g_strstrip (g_ascii_strdown (script_data_as_string
+        rhs = script_data_to_integer (args->next->data);
+	operation = g_strstrip (g_ascii_strdown (script_data_to_string
 				(args->data), -1));
 
         if (strcmp(operation, "set") == 0) {
@@ -1184,7 +1184,7 @@ static void
 script_put (GList *args)
 {
 	gdk_threads_enter ();
-	warlock_send ("%s", script_list_as_string (args));
+	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
 }
 
@@ -1194,7 +1194,7 @@ script_goto (GList *args)
 {
 	char *label;
 
-	label = g_strstrip (g_ascii_strdown (script_list_as_string (args), -1));
+	label = g_strstrip (g_ascii_strdown (script_list_to_string (args), -1));
         if (*label == '\0') {
                 script_error ("GOTO with no label specified");
                 return;
@@ -1209,7 +1209,7 @@ script_move (GList *args)
 	g_mutex_lock (script_mutex);
 
 	gdk_threads_enter ();
-	warlock_send ("%s", script_list_as_string (args));
+	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
 
         next_room_wait (script_mutex);
@@ -1228,7 +1228,7 @@ script_pause (GList *args)
 	if (args == NULL ||  args->data == NULL) {
 		pause_time = 1;
 	} else {
-		pause_time = script_data_as_integer (args->data);
+		pause_time = script_data_to_integer (args->data);
 		if (pause_time < 1) {
 			pause_time = 1;
 		}
@@ -1243,7 +1243,7 @@ static void
 script_echo (GList *args)
 {
 	gdk_threads_enter ();
-	echo_f ("%s\n", script_list_as_string (args));
+	echo_f ("%s\n", script_list_to_string (args));
 	gdk_threads_leave ();
 }
 
@@ -1287,23 +1287,24 @@ script_nextroom (GList *args)
 static void
 script_save (GList *args)
 {
-        ScriptData *data;
+        char *str, *orig;
 
-        data = string_to_script_data (script_list_as_string (args));
-        if (*data->value.as_string == '"' || *data->value.as_string == '\'') {
-                char c;
-                char *tmp;
+        str = script_list_to_string (args);
+	orig = str;
+	/* if we have matching "s or 's at the beginning and end of the string,
+	 * remove them */
+        if (*str == '"' || *str == '\'') {
+                char *last_char;
 
-                c = *data->value.as_string;
-                tmp = &data->value.as_string[strlen (data->value.as_string)
-                        - 1];
-                if (*tmp == c) {
-                        data->value.as_string++;
-                        *tmp = '\0';
+                last_char = &str[strlen (str) - 1];
+                if (*last_char == *str) {
+                        str++;
+                        *last_char = '\0';
                 }
         }
 
-        script_variable_set ("s", data);
+        script_variable_set ("s", string_to_script_data (str));
+	g_free (orig);
 }
 
 /* Support for user-created variables */
@@ -1319,10 +1320,10 @@ script_setvariable (GList *args)
 		return;
 	}
 
-	name = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+	name = g_strstrip (g_ascii_strdown (script_data_to_string (args->data),
 				-1));
 
-	value = string_to_script_data (g_strstrip (script_list_as_string
+	value = string_to_script_data (g_strstrip (script_list_to_string
 			(args->next)));
         script_variable_set (name, value);
 }
@@ -1338,7 +1339,7 @@ script_deletevariable (GList *args)
 		return;
 	}
 
-	name = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+	name = g_strstrip (g_ascii_strdown (script_data_to_string (args->data),
 				-1));
 
         script_variable_unset (name);
@@ -1355,7 +1356,7 @@ script_call (GList *args)
 		return;
 	}
 
-	label = g_strstrip (g_ascii_strdown (script_data_as_string (args->data),
+	label = g_strstrip (g_ascii_strdown (script_data_to_string (args->data),
 				-1));
         if (*label == '\0') {
                 script_error ("CALL with no label specified");
@@ -1398,10 +1399,10 @@ script_random (GList *args)
 		upper = 100;
 	} else if (args->next == NULL || args->next->data == NULL) {
 		lower = 0;
-		upper = script_data_as_integer (args->data);
+		upper = script_data_to_integer (args->data);
         } else {
-		lower = script_data_as_integer (args->data);
-		upper = script_data_as_integer (args->next->data);
+		lower = script_data_to_integer (args->data);
+		upper = script_data_to_integer (args->next->data);
 	}
 
 	// 1 is added to upper so that it will include the upper number
