@@ -354,9 +354,9 @@ script_command (int argc, const char **argv)
 		void (*script_loader)(const char *filename, int argc,
 				const char **argv);
 	} suffixes[] = {
-		{".[Cc][Mm][Dd]", script_load},
+		{"\\.[Cc][Mm][Dd]", script_load},
 #ifdef CONFIG_SPIDERMONKEY
-		{".js", js_script_load},
+		{"\\.js", js_script_load},
 #endif
 		{NULL, NULL}
 	};
@@ -381,7 +381,8 @@ script_command (int argc, const char **argv)
 		int offset;
 
 		/* create the pattern */
-		pattern = g_strdup_printf ("%s%s", argv[0], suffixes[i].suffix);
+		pattern = g_strdup_printf ("^%s%s$", argv[0],
+				suffixes[i].suffix);
 		regex = pcre_compile (pattern, 0, &pcre_err, &offset, NULL);
 		g_free (pattern);
 		if (regex == NULL) {
