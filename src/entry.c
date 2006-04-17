@@ -22,7 +22,8 @@
 #endif
 
 #include <string.h>
-#include <glob.h>
+
+#include <pcre.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -367,34 +368,54 @@ script_command (int argc, const char **argv)
         g_free (key);
 
         script_prefix = g_build_filename (script_path, argv[0], NULL);
-        g_free (script_path);
 
-	for (i = 0, found = FALSE; suffixes[i].suffix != NULL && !found; i++) {
-		glob_t globbuf;
-		GString *pattern;
+	found = FALSE;
+	for (i = 0; suffixes[i].suffix != NULL && !found; i++) {
+		char *pattern;
+		pcre *regex;
+		GDir *dir;
+		GError *err;
+		const char *file;
+		const char *pcre_err;
+		int match[3];
+		int offset;
 
 		/* create the pattern */
-		pattern = g_string_new (script_prefix);
-		g_string_append (pattern, suffixes[i].suffix);
-
-		/* check if we have a file */
-		if (glob (pattern->str, GLOB_NOSORT, NULL, &globbuf) == 0) {
-
-			g_assert (globbuf.gl_pathv != NULL);
-
-			(suffixes[i].script_loader)(globbuf.gl_pathv[0], argc,
-						    argv);
-
-			found = TRUE;
+		pattern = g_strdup_printf ("%s%s", argv[0], suffixes[i].suffix);
+		regex = pcre_compile (pattern, 0, &pcre_err, &offset, NULL);
+		g_free (pattern);
+		if (regex == NULL) {
+			g_error ("Error compiling regex to open script at "
+					"character %d: %s\n", offset, pcre_err);
+			continue;
 		}
 
-		globfree (&globbuf);
-		g_string_free (pattern, TRUE);
+		/* check if any files match */
+		err = NULL;
+		dir = g_dir_open (script_path, 0, &err);
+		print_error (err);
+		while ((file = g_dir_read_name (dir)) != NULL) {
+			if (pcre_exec (regex, NULL, file, strlen (file), 0, 0,
+						match, 3) >= 1) {
+
+				char *result;
+
+				result = g_build_filename (script_path, file,
+						NULL);
+				(suffixes[i].script_loader)(result, argc, argv);
+
+				found = TRUE;
+				break;
+			}
+		}
+		g_dir_close (dir);
+		pcre_free (regex);
 	}
 
 	if (!found) {
 		echo_f ("*** could not load script: %s ***\n", argv[0]);
         }
 
+        g_free (script_path);
         g_free (script_prefix);
 }

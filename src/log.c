@@ -124,8 +124,8 @@ log_toggle (void)
 		err = NULL;
 		log_file = g_io_channel_new_file (filename, "a", &err);
 		if (log_file == NULL) {
-			echo_f ("Error: \"%s\" for file \"%s\".", err->message,
-					filename);
+			echo_f ("Error: \"%s\" for file \"%s\".\n",
+					err->message, filename);
 		}
 	} else if (!autolog && log_file != NULL) {
 		g_io_channel_close (log_file);
