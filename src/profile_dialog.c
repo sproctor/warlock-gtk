@@ -500,6 +500,7 @@ void profile_dialog_init (void)
         rebuild_profile_list ();
 }
 
+EXPORT
 void on_profile_new_clicked (GtkButton *button, gpointer user_data)
 {
         GSList *list;
@@ -521,6 +522,7 @@ void on_profile_new_clicked (GtkButton *button, gpointer user_data)
                         PREFERENCES_VALUE_INT, list);
 }
 
+EXPORT
 void on_profile_delete_clicked (GtkButton *button, gpointer user_data)
 {
         GSList *list;
@@ -686,6 +688,7 @@ static void close_window (void)
         gtk_widget_hide (glade_xml_get_widget (warlock_xml, "profile_dialog"));
 }
 
+EXPORT
 gboolean on_profile_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)
 {
@@ -693,6 +696,7 @@ gboolean on_profile_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
         return TRUE;
 }
 
+EXPORT
 void on_profile_close_clicked (GtkButton *button, gpointer user_data)
 {
         close_window ();

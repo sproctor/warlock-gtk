@@ -46,6 +46,7 @@ extern GladeXML *warlock_xml;
 
 static GtkListStore *macro_list = NULL;
 
+EXPORT
 void
 on_macro_remove_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -318,11 +319,13 @@ static void create_macro_grab_dialog (char *key)
         gtk_widget_destroy (dialog);
 }
 
+EXPORT
 void on_macro_add_button_clicked (GtkButton *button, gpointer user_data)
 {
         create_macro_grab_dialog (NULL);
 }
 
+EXPORT
 void on_macro_change_button_clicked (GtkButton *button, gpointer user_data)
 {
         GtkWidget *view;
@@ -349,12 +352,14 @@ void on_macro_change_button_clicked (GtkButton *button, gpointer user_data)
         create_macro_grab_dialog (macro_to_string (keyval, state, command));
 }
 
+EXPORT
 void
 on_macros_close_button_clicked (GtkButton *button, gpointer user_data)
 {
         gtk_widget_hide (glade_xml_get_widget (warlock_xml, "macros_dialog"));
 }
 
+EXPORT
 gboolean
 on_macros_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)

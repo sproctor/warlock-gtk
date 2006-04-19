@@ -20,12 +20,6 @@
 #  include <config.h>
 #endif
 
-#ifdef __WIN32__
-# define EXPORT __declspec (dllexport)
-#else
-# define EXPORT
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 

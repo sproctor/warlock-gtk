@@ -83,6 +83,7 @@ text_strings_dialog_init (void)
  ************************************************************************/
 
 /* hide the window when the close button is hit */
+EXPORT
 void
 on_text_strings_close_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -93,6 +94,7 @@ on_text_strings_close_button_clicked (GtkButton *button, gpointer user_data)
 }
 
 /* hide the window when the X is hit */
+EXPORT
 gboolean
 on_text_strings_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)
@@ -106,6 +108,7 @@ on_text_strings_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
 }
 
 /* handle the down button being pressed */
+EXPORT
 void
 on_highlight_down_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -142,6 +145,7 @@ on_highlight_down_button_clicked (GtkButton *button, gpointer user_data)
 }
 
 /* handle the up button being pressed */
+EXPORT
 void
 on_highlight_up_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -181,6 +185,7 @@ on_highlight_up_button_clicked (GtkButton *button, gpointer user_data)
 }
 
 /* handle the add button being pressed */
+EXPORT
 void
 on_highlight_add_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -216,6 +221,7 @@ on_highlight_add_button_clicked (GtkButton *button, gpointer user_data)
 }
 
 /* handle the remove button being pressed */
+EXPORT
 void
 on_highlight_remove_button_clicked (GtkButton *button, gpointer user_data)
 {

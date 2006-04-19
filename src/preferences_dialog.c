@@ -327,6 +327,7 @@ preferences_dialog_init (void)
 //      and map them via a hash or whatever, so we can get rid of the
 //      thousand functions below
 
+EXPORT
 void
 on_echo_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 {
@@ -334,6 +335,7 @@ on_echo_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
                         gtk_toggle_button_get_active (togglebutton));
 }
 
+EXPORT
 void
 on_sneak_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 {
@@ -341,6 +343,7 @@ on_sneak_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
                         gtk_toggle_button_get_active (togglebutton));
 }
 
+EXPORT
 void
 on_log_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 {
@@ -348,6 +351,7 @@ on_log_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
                         gtk_toggle_button_get_active (togglebutton));
 }
 
+EXPORT
 void
 on_text_buffer_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                 gpointer user_data)
@@ -356,6 +360,7 @@ on_text_buffer_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                         gtk_spin_button_get_value_as_int (spinbutton));
 }
 
+EXPORT
 void
 on_command_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                 gpointer user_data)
@@ -364,6 +369,7 @@ on_command_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                         gtk_spin_button_get_value_as_int (spinbutton));
 }
 
+EXPORT
 void
 on_history_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                 gpointer user_data)
@@ -372,6 +378,7 @@ on_history_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
                         gtk_spin_button_get_value_as_int (spinbutton));
 }
 
+EXPORT
 void
 on_script_prefix_entry_changed (GtkEditable *editable, gpointer user_data)
 {
@@ -379,6 +386,7 @@ on_script_prefix_entry_changed (GtkEditable *editable, gpointer user_data)
                         gtk_entry_get_text (GTK_ENTRY (editable)));
 }
 
+EXPORT
 void
 on_script_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
                 gpointer user_data)
@@ -402,6 +410,7 @@ on_script_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
         g_free (filename);
 }
 
+EXPORT
 void
 on_log_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
                 gpointer user_data)
@@ -428,6 +437,7 @@ on_log_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
         g_free (filename);
 }
 
+EXPORT
 void
 on_preferences_close_button_clicked (GtkButton *button, gpointer user_data)
 {
@@ -435,6 +445,7 @@ on_preferences_close_button_clicked (GtkButton *button, gpointer user_data)
 				"preferences_dialog"));
 }
 
+EXPORT
 gboolean
 on_preferences_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)

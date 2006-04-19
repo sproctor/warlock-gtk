@@ -21,6 +21,12 @@
 
 #define _(x)		(x)
 
+#ifdef __WIN32__
+# define EXPORT __declspec (dllexport)
+#else
+# define EXPORT 
+#endif
+
 enum {
 	LEFT_HAND = 1,
 	RIGHT_HAND

@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "preferences.h"
 #include "warlockview.h"
+#include "warlock.h"
 
 /* external global variables */
 extern GladeXML *warlock_xml;
@@ -156,6 +157,7 @@ warlock_log_init (void)
  * Event handlers							*
  ************************************************************************/
 
+EXPORT
 void
 on_save_history_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
@@ -172,6 +174,7 @@ on_save_history_activate (GtkMenuItem *menuitem, gpointer user_data)
 	g_free (log_path);
 }
 
+EXPORT
 void
 on_save_history_as_activate (GtkMenuItem *menuitem, gpointer user_data)
 {

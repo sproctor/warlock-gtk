@@ -333,6 +333,7 @@ warlock_history_last (void)
         }
 }
 
+EXPORT
 void
 on_warlock_entry_activate              (GtkEntry        *entry,
                                         gpointer         user_data)
