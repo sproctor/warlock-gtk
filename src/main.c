@@ -20,6 +20,12 @@
 #  include <config.h>
 #endif
 
+#ifdef __WIN32__
+# define EXPORT __declspec (dllexport)
+#else
+# define EXPORT
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -201,6 +207,7 @@ int main (int argc, char *argv[])
  * Event handlers							*
  ************************************************************************/
 
+EXPORT
 gboolean
 on_main_window_delete_event            (GtkWidget       *widget,
                                         GdkEvent        *event,
@@ -210,6 +217,7 @@ on_main_window_delete_event            (GtkWidget       *widget,
         return TRUE;
 }
 
+EXPORT
 gboolean
 on_main_window_key_press_event         (GtkWidget       *widget,
                                         GdkEventKey     *event,
@@ -282,6 +290,7 @@ on_main_window_key_press_event         (GtkWidget       *widget,
         }
 }
 
+EXPORT
 void
 on_quit_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -289,7 +298,7 @@ on_quit_activate                      (GtkMenuItem     *menuitem,
         warlock_exit ();
 }
 
-
+EXPORT
 void
 on_about_activate                     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -300,6 +309,7 @@ on_about_activate                     (GtkMenuItem     *menuitem,
 	gtk_widget_show (about_dialog);
 }
 
+EXPORT
 void
 on_arrival_menu_item_activate          (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -311,7 +321,7 @@ on_arrival_menu_item_activate          (GtkMenuItem     *menuitem,
         }
 }
 
-
+EXPORT
 void
 on_thoughts_menu_item_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -324,7 +334,7 @@ on_thoughts_menu_item_activate         (GtkMenuItem     *menuitem,
 
 }
 
-
+EXPORT
 void
 on_familiar_menu_item_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -337,7 +347,7 @@ on_familiar_menu_item_activate         (GtkMenuItem     *menuitem,
 
 }
 
-
+EXPORT
 void
 on_deaths_menu_item_activate           (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -349,6 +359,7 @@ on_deaths_menu_item_activate           (GtkMenuItem     *menuitem,
         }
 }
 
+EXPORT
 gboolean
 on_main_window_key_press_default_event (GtkWidget *widget, GdkEventKey *event,
                 gpointer user_data)
@@ -369,6 +380,7 @@ on_main_window_key_press_default_event (GtkWidget *widget, GdkEventKey *event,
         return warlock_entry_give_key_event (event);
 }
 
+EXPORT
 void
 on_preferences_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
@@ -378,6 +390,7 @@ on_preferences_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
         gtk_widget_show (dialog);
 }
 
+EXPORT
 void
 on_text_strings_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
@@ -387,6 +400,7 @@ on_text_strings_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
         gtk_widget_show (dialog);
 }
 
+EXPORT
 void
 on_macros_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
@@ -396,6 +410,7 @@ on_macros_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
         gtk_widget_show (dialog);
 }
 
+EXPORT
 void
 on_execute_menu_item_activate          (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -449,21 +464,25 @@ on_execute_menu_item_activate          (GtkMenuItem     *menuitem,
 
 }
 
+EXPORT
 void on_stop_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         script_kill ();
 }
 
+EXPORT
 void on_connections_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         gtk_widget_show (glade_xml_get_widget (warlock_xml, "profile_dialog"));
 }
 
+EXPORT
 void on_disconnect_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         warlock_disconnect ();
 }
 
+EXPORT
 void on_connect_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         warlock_connection_init ();
