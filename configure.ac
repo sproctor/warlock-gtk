@@ -242,4 +242,4 @@ else
 	CFLAGS="-O2"
 fi
 
-AC_OUTPUT(Makefile util/Makefile dock/Makefile src/Makefile)
+AC_OUTPUT(Makefile util/Makefile dock/Makefile druid/Makefile src/Makefile)

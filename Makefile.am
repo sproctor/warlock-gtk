@@ -1,4 +1,4 @@
-SUBDIRS = util dock src
+SUBDIRS = util dock druid src
 
 EXTRA_DIST = \
 	$(schema_DATA)

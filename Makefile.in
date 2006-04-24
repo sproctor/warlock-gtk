@@ -212,7 +212,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = util dock src
+SUBDIRS = util dock druid src
 EXTRA_DIST = \
 	$(schema_DATA)
 

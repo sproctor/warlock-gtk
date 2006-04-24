@@ -20636,7 +20636,7 @@ else
 	CFLAGS="-O2"
 fi
 
-                                        ac_config_files="$ac_config_files Makefile util/Makefile dock/Makefile src/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile util/Makefile dock/Makefile druid/Makefile src/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -21217,6 +21217,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "util/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/Makefile" ;;
   "dock/Makefile" ) CONFIG_FILES="$CONFIG_FILES dock/Makefile" ;;
+  "druid/Makefile" ) CONFIG_FILES="$CONFIG_FILES druid/Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
