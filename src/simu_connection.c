@@ -145,7 +145,8 @@ handle_server_data (SimuConnection *conn)
         }
 }
 
-void simu_connection_shutdown (SimuConnection *conn)
+void
+simu_connection_shutdown (SimuConnection *conn)
 {
         GError *err;
 
@@ -178,7 +179,8 @@ input_loop (gpointer user_data)
         return NULL;
 }
 
-static gpointer init_connect (gpointer user_data)
+static gpointer
+init_connect (gpointer user_data)
 {
 	SimuConnection *conn;
         struct hostent *host;
@@ -188,35 +190,35 @@ static gpointer init_connect (gpointer user_data)
         conn = user_data;
 
 #ifdef __WIN32__
-        WORD version = MAKEWORD(1,1);
+        WORD version = MAKEWORD (1,1);
         WSADATA wsaData;
 
-        WSAStartup(version, &wsaData);
+        WSAStartup (version, &wsaData);
 #endif
 
-        sock = socket(AF_INET, SOCK_STREAM, 0);
+        sock = socket (AF_INET, SOCK_STREAM, 0);
 	if (sock == -1) {
 		g_warning ("Could not open socket.\n");
 		return NULL;
 	}
 
-        host = gethostbyname(conn->server);
+        host = gethostbyname (conn->server);
 	if (host == NULL) {
 		g_warning ("Could not lookup hostname\n");
 		return NULL;
 	}
 
-        memset(&sin, 0, sizeof(struct sockaddr_in));
+        memset(&sin, 0, sizeof (struct sockaddr_in));
         sin.sin_family = AF_INET;
-        sin.sin_port = htons(conn->port);
+        sin.sin_port = htons (conn->port);
         sin.sin_addr.s_addr = ((struct in_addr *)(host->h_addr))->s_addr;
 
         if (connect(sock, (struct sockaddr*)&sin,
-				sizeof(struct sockaddr)) < 0) {
+				sizeof (struct sockaddr)) < 0) {
 #ifdef __WIN32__
-                closesocket(sock);
+                closesocket (sock);
 #else
-                close(sock);
+                close (sock);
 #endif
                 // FIXME: handle this case more gracefully
                 g_warning ("Couldn't open connection to server. "
@@ -225,9 +227,9 @@ static gpointer init_connect (gpointer user_data)
         }
 
 #ifdef __WIN32__
-        conn->channel = g_io_channel_win32_new_socket(sock);
+        conn->channel = g_io_channel_win32_new_socket (sock);
 #else
-        conn->channel = g_io_channel_unix_new(sock);
+        conn->channel = g_io_channel_unix_new (sock);
 #endif
 
         g_io_channel_set_encoding (conn->channel, NULL, NULL);
@@ -236,17 +238,18 @@ static gpointer init_connect (gpointer user_data)
                 conn->init_func (conn->init_data);
         }
 
-        conn->thread = g_thread_create(input_loop, conn, TRUE, NULL);
+        conn->thread = g_thread_create (input_loop, conn, TRUE, NULL);
 
 	return NULL;
 }
 
 
 
-SimuConnection *simu_connection_init (const char *server, int port,
-                SimuInitFunc init_func, gpointer init_data,
-                SimuLineHandler line_handler, gpointer line_data,
-                SimuQuitHandler quit_handler, gpointer quit_data)
+SimuConnection *
+simu_connection_init (const char *server, int port,
+		SimuInitFunc init_func, gpointer init_data,
+		SimuLineHandler line_handler, gpointer line_data,
+		SimuQuitHandler quit_handler, gpointer quit_data)
 {
 	SimuConnection *conn = g_new (SimuConnection, 1);
 

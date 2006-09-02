@@ -217,7 +217,6 @@ on_main_window_key_press_event         (GtkWidget       *widget,
                                         GdkEventKey     *event,
                                         gpointer         user_data)
 {
-        GtkWidget *main_scroller;
         gboolean result;
 
         switch (event->keyval) {
@@ -237,11 +236,10 @@ on_main_window_key_press_event         (GtkWidget       *widget,
 
                 case GDK_Page_Up:
                 case GDK_Page_Down:
-                        main_scroller = glade_xml_get_widget (warlock_xml,
-                                        "main_scrolled_window");
                         //gtk_widget_grab_focus (main_window->scroller);
-                        g_signal_emit_by_name (main_scroller, "key_press_event",
-                                        event, &result);
+                        g_signal_emit_by_name (warlock_view_get_scrolled_window
+					("main"), "key_press_event", event,
+					&result);
                         return result;
 
                 case GDK_KP_Enter :	/* send last command entered */

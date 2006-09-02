@@ -141,7 +141,7 @@ conditional:
 		$$->expr.binary = expr; }
 	| SCRIPT_UNARY_OP conditional	{
 		ScriptUnaryExpr *expr;
-		g_new (ScriptUnaryExpr, 1);
+		expr = g_new (ScriptUnaryExpr, 1);
 		expr->op = $1;
 		expr->rhs = $2;
 		$$ = g_new (ScriptConditional, 1);

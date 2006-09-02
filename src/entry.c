@@ -352,7 +352,7 @@ script_command (int argc, const char **argv)
 
 	const struct {
 		const char *suffix;
-		void (*script_loader)(const char *filename, int argc,
+		void (*script_loader) (const char *filename, int argc,
 				const char **argv);
 	} suffixes[] = {
 		{"\\.[Cc][Mm][Dd]", script_load},

@@ -46,15 +46,17 @@
 typedef struct _WarlockView WarlockView;
 
 struct _WarlockView {
-        const char      *title;
+        const char	*title;
 	const char	*name;
-        GtkWidget 	*text_view;
-        GtkTextBuffer 	*text_buffer;
+        GtkWidget	*text_view;
+        GtkTextBuffer	*text_buffer;
 	GtkWidget	*widget;
-        Preference       gconf_key;
-        GtkTextMark     *mark;
+	GtkWidget	*scrolled_window;
+        Preference	 gconf_key;
+        GtkTextMark	*mark;
 	WString		*buffer;
 	GtkWidget	*menuitem;
+	GSList		*listeners;
 };
 
 /* external global variables */
@@ -333,17 +335,16 @@ warlock_view_init (Preference key, const char *name, const char *title,
         GtkWidget *text_view;
         GtkWidget *dock_item;
         GtkWidget *frame;
-        GtkWidget *scrolled_window;
         WarlockView *warlock_view;
 	gboolean shown;
 
         dock_item = egg_dock_item_new (name, title, EGG_DOCK_ITEM_BEH_NORMAL);
         frame = gtk_frame_new (title);
-        scrolled_window = gtk_scrolled_window_new (NULL, NULL);
         text_view = gtk_text_view_new ();
 
         warlock_view = warlock_view_new (text_view);
         warlock_view->widget = dock_item;
+        warlock_view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
@@ -352,11 +353,14 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	}
 	warlock_view->gconf_key = key;
 
-        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
-                        GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW
+			(warlock_view->scrolled_window), GTK_POLICY_NEVER,
+			GTK_POLICY_ALWAYS);
 
-        gtk_container_add (GTK_CONTAINER (scrolled_window), text_view);
-        gtk_container_add (GTK_CONTAINER (frame), scrolled_window);
+        gtk_container_add (GTK_CONTAINER (warlock_view->scrolled_window),
+			text_view);
+        gtk_container_add (GTK_CONTAINER (frame),
+			warlock_view->scrolled_window);
         gtk_container_add (GTK_CONTAINER (dock_item), frame);
 	egg_dock_add_item (EGG_DOCK (views_dock), EGG_DOCK_ITEM (dock_item),
 			EGG_DOCK_CENTER);
@@ -563,6 +567,18 @@ warlock_view_get_text (const char *name)
 			FALSE);
 }
 
+GtkWidget *
+warlock_view_get_scrolled_window (const char *name)
+{
+	WarlockView *view;
+
+	view = get_view (name);
+	if (view == NULL)
+		return NULL;
+	
+	return view->scrolled_window;
+}
+
 void
 warlock_view_show (const char *name)
 {
@@ -573,4 +589,9 @@ void
 warlock_view_hide (const char *name)
 {
         view_hide (get_view (name));
+}
+
+void
+warlock_view_add_listener (const char *name, WarlockViewListener listener)
+{
 }

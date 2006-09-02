@@ -21,6 +21,8 @@
 
 #include "warlockstring.h"
 
+typedef gboolean (*WarlockViewListener) (const char *line);
+
 void warlock_views_init (void);
 void warlock_view_show (const char *name);
 void warlock_view_hide (const char *name);
@@ -30,5 +32,7 @@ void do_prompt (void);
 void warlock_view_append (const char *name, const WString *w_string);
 void warlock_view_end_line (const char *name);
 char *warlock_view_get_text (const char *name);
+GtkWidget *warlock_view_get_scrolled_window (const char *name);
+void warlock_view_add_listener (const char *name, WarlockViewListener listener);
 
 #endif
