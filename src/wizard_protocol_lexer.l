@@ -251,11 +251,7 @@ handle_command (char command, char *params)
                         if (time != 0) {
                                 warlock_set_time (time);
                         }
-			if (!prompting) {
-				do_prompt ();
-				prompting = TRUE;
-			}
-                        script_got_prompt ();
+			do_prompt ();
 			break;
                 case 'r': // I have no idea what this command does
                         break;

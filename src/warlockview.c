@@ -65,9 +65,6 @@ extern GtkTextTagTable	*highlight_tag_table;
 extern GtkTextTagTable	*text_tag_table;
 extern gboolean		 script_running;
 
-/* global variables */
-gboolean prompting = FALSE;
-
 /* local variables */
 static GtkWidget	*views_dock = NULL;
 static GList		*views = NULL;
@@ -75,6 +72,7 @@ static WarlockView	*main_view = NULL;
 
 static int		 max_buffer_size = -1;
 static guint		 buffer_size_notification = 0;
+static gboolean		 prompting = FALSE;
 
 static void
 change_text_color (const char *key, gpointer user_data)
@@ -278,6 +276,9 @@ view_append (WarlockView *view, WString *string)
 
         // Cut off beginning lines that don't fit in the buffer.
         warlock_view_trim (view);
+
+	if (view == main_view)
+		prompting = FALSE;
 }
 
 // destroy the view
@@ -502,6 +503,16 @@ do_prompt (void)
         char* js_prompt_string;
 #endif
 
+	script_got_prompt ();
+
+	if (prompting)
+		return;
+
+	// If we have some text to display, do it
+	if (main_view->buffer != NULL) {
+		warlock_view_end_line (NULL);
+	}
+
         string = w_string_new ("");
 
         if (script_running) {
@@ -518,17 +529,12 @@ do_prompt (void)
 
         w_string_append_c (string, '>');
 
-	// If we have some text to display, do it
-	if (main_view->buffer != NULL) {
-		warlock_view_end_line (NULL);
-	}
-	// new line to insert after the prompt
-	//w_string_prepend_c (string, '\n');
 
 	debug ("prompt: %s\n", string->string->str);
 
         view_append (main_view, string);
         w_string_free (string, TRUE);
+	prompting = TRUE;
 }
 
 void
@@ -553,11 +559,13 @@ warlock_view_end_line (const char *name)
 		view = main_view;
 	}
         view->buffer = w_string_append_c (view->buffer, '\n');
+	// new line to insert after the prompt
+	if (prompting) {
+		view->buffer = w_string_prepend_c (view->buffer, '\n');
+	}
         view_append (view, view->buffer);
         w_string_free (view->buffer, TRUE);
         view->buffer = NULL;
-	if (view == main_view)
-		prompting = FALSE;
 }
 
 char *
