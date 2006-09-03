@@ -46,6 +46,7 @@
 /* external global variables */
 extern SimuConnection *connection;
 extern GladeXML *warlock_xml;
+extern gboolean prompting;
 
 /* local variables */
 static gboolean highlighting = FALSE;
@@ -54,7 +55,6 @@ static gboolean room_title = FALSE;
 static gboolean death = FALSE;
 static char command = 0;
 static gboolean quit = FALSE;
-static gboolean prompting = FALSE;
 
 /* local function definitions */
 static char *lexer_string (void);

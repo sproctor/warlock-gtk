@@ -518,6 +518,7 @@ char *wizardtext;
 /* external global variables */
 extern SimuConnection *connection;
 extern GladeXML *warlock_xml;
+extern gboolean prompting;
 
 /* local variables */
 static gboolean highlighting = FALSE;
@@ -526,7 +527,6 @@ static gboolean room_title = FALSE;
 static gboolean death = FALSE;
 static char command = 0;
 static gboolean quit = FALSE;
-static gboolean prompting = FALSE;
 
 /* local function definitions */
 static char *lexer_string (void);
@@ -1076,7 +1076,7 @@ static int yy_get_next_buffer (void)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			(yy_n_chars), num_to_read );
+			(yy_n_chars), (size_t) num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
 		}

@@ -65,6 +65,9 @@ extern GtkTextTagTable	*highlight_tag_table;
 extern GtkTextTagTable	*text_tag_table;
 extern gboolean		 script_running;
 
+/* global variables */
+gboolean prompting = FALSE;
+
 /* local variables */
 static GtkWidget	*views_dock = NULL;
 static GList		*views = NULL;
@@ -520,7 +523,9 @@ do_prompt (void)
 		warlock_view_end_line (NULL);
 	}
 	// new line to insert after the prompt
-	w_string_prepend_c (string, '\n');
+	//w_string_prepend_c (string, '\n');
+
+	debug ("prompt: %s\n", string->string->str);
 
         view_append (main_view, string);
         w_string_free (string, TRUE);
@@ -551,6 +556,8 @@ warlock_view_end_line (const char *name)
         view_append (view, view->buffer);
         w_string_free (view->buffer, TRUE);
         view->buffer = NULL;
+	if (view == main_view)
+		prompting = FALSE;
 }
 
 char *
