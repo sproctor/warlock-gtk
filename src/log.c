@@ -45,7 +45,9 @@ warlock_log_get_name (void)
 	name = g_new (char, 16);
 
 	t = time (NULL);
-	strftime (name, 16, "%G%m%d%H%M%S", localtime (&t));
+	if (strftime (name, 16, "%G%m%d%H%M%S", localtime (&t)) == 0) {
+		return NULL;
+	}
 
 	return name;
 }
@@ -69,7 +71,7 @@ save_log (const char *filename)
 
 	history = warlock_view_get_text (NULL);
 
-	g_io_channel_write_chars (file, history, -1, &size, &err);
+	(void)g_io_channel_write_chars (file, history, -1, &size, &err);
 	debug ("%d characters written to file\n", size);
 	print_error (err);
 
@@ -87,11 +89,11 @@ warlock_log (const char *str)
 		gsize size;
 
 		err = NULL;
-		g_io_channel_write_chars (log_file, str, -1, &size, &err);
+		(void)g_io_channel_write_chars (log_file, str, -1, &size, &err);
 		print_error (err);
 
 		err = NULL;
-		g_io_channel_flush (log_file, &err);
+		(void)g_io_channel_flush (log_file, &err);
 		print_error (err);
 	}
 }
@@ -150,7 +152,7 @@ warlock_log_init (void)
 
 	key = preferences_get_key (PREF_AUTO_LOG);
 
-	preferences_notify_add (key, log_notify, NULL);
+	(void)preferences_notify_add (key, log_notify, NULL);
 }
 
 /************************************************************************
@@ -187,14 +189,13 @@ on_save_history_as_activate (GtkMenuItem *menuitem, gpointer user_data)
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
-	/* TODO enable this when we start requiring 2.8
 	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER
-			(dialog), TRUE);*/
+			(dialog), TRUE);
 
 	key = preferences_get_key (PREF_LOG_PATH);
 	log_path = preferences_get_string (key);
 	g_free (key);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
+	(void)gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
 			log_path);
 	g_free (log_path);
 

@@ -76,7 +76,7 @@ static void compass_init_item (GtkWidget *compass_table, guint x, guint y)
         if (file_table[y][x] != NULL) {
 		char *on_file, *off_file, tmp[256];
 
-		g_snprintf (tmp, 256, "%s_on.xpm", file_table[y][x]);
+		(void)g_snprintf (tmp, 256, "%s_on.xpm", file_table[y][x]);
 		on_file = g_build_filename (PACKAGE_DATA_DIR, PACKAGE, tmp,
 				NULL);
 		err = NULL;
@@ -85,7 +85,7 @@ static void compass_init_item (GtkWidget *compass_table, guint x, guint y)
 		print_error (err);
 		g_free (on_file);
 
-		g_snprintf (tmp, 256, "%s.xpm", file_table[y][x]);
+		(void)g_snprintf (tmp, 256, "%s.xpm", file_table[y][x]);
 		off_file = g_build_filename (PACKAGE_DATA_DIR, PACKAGE, tmp,
 				NULL);
 		err = NULL;
@@ -116,8 +116,8 @@ static void compass_init_item (GtkWidget *compass_table, guint x, guint y)
 
 void compass_init (GtkWidget *compass_table)
 {
-        int x, y;
-        int cols, rows;
+        guint16 x, y;
+        guint16 cols, rows;
 
         g_assert (compass_table != NULL);
 
@@ -130,7 +130,7 @@ void compass_init (GtkWidget *compass_table)
         gtk_widget_show_all (compass_table);
 }
 
-static void compass_toggle_item (guint x, guint y, gboolean on)
+static void compass_toggle_item (guint16 x, guint16 y, gboolean on)
 {
         g_assert (pixbuf_table[y][x][on] != NULL);
 
@@ -141,7 +141,7 @@ static void compass_toggle_item (guint x, guint y, gboolean on)
 
 void compass_set_directions(char *directions)
 {
-        guint x, y, i;
+        guint16 x, y, i;
         gboolean new_table[3][4];
 
         for (y = 0; y < 3; y++)

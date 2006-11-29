@@ -200,7 +200,7 @@ static JSClass global_class = {
 	NULL,
 	NULL,
 	NULL,
-	0
+	(JSReserveSlotsOp)0
 };
 
 // queue class signature

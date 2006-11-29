@@ -50,10 +50,10 @@ extern gchar *drag_obj;
 
 /* local variables */
 static GtkWidget *entry = NULL;
-static int pos = 0;
+static guint pos = 0;
 static GSList *command_history = NULL;
-static int min_command_size = 0;
-static int max_history_size = 0;
+static gint min_command_size = 0;
+static gint max_history_size = 0;
 static guint command_size_notification = 0;
 static guint history_size_notification = 0;
 
@@ -69,7 +69,7 @@ trim_history (void)
 
         size = g_slist_length (command_history);
 
-        if (size > max_history_size) {
+        if (size > (guint)max_history_size) {
                 GSList *new_last, *delete_list;
 
                 // get what should be the last element
@@ -111,8 +111,9 @@ update_history (const char *string)
         /* if the sting is shorter than the minimum size or equal to the last
          * message, ignore it
          */
-        if (strlen (string) >= min_command_size && (command_history == NULL ||
-                                strcmp (string, command_history->data) != 0)) {
+        if ((gint)strlen (string) >= (gint)min_command_size &&
+			(command_history == NULL ||
+			 strcmp (string, command_history->data) != 0)) {
                 command_history = g_slist_prepend (command_history,
                                 g_strdup(string));
                 trim_history ();
@@ -397,9 +398,8 @@ script_command (int argc, const char **argv)
 		dir = g_dir_open (script_path, 0, &err);
 		print_error (err);
 		while ((file = g_dir_read_name (dir)) != NULL) {
-			if (pcre_exec (regex, NULL, file, strlen (file), 0, 0,
-						match, 3) >= 1) {
-
+			if (pcre_exec (regex, NULL, file, (int)strlen (file), 0,
+						0, match, 3) >= 1) {
 				char *result;
 
 				result = g_build_filename (script_path, file,

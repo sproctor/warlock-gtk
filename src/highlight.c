@@ -42,7 +42,7 @@ static int next_priority = 0;
 typedef struct _WarlockHighlight WarlockHighlight;
 
 struct _WarlockHighlight {
-        int id;
+        guint id;
         pcre *regex;
         GSList *gconf_connections;
 };
@@ -104,7 +104,7 @@ static gchar *mangle_name (guint id, guint n)
         return g_strdup_printf ("%06X.%d", id, n);
 }
 
-static GtkTextTag *highlight_add_tag (const char *name, const GdkColor *text,
+static void highlight_add_tag (const char *name, const GdkColor *text,
                 const GdkColor *base, const char *font)
 {
         GtkTextTag *tag;
@@ -124,8 +124,6 @@ static GtkTextTag *highlight_add_tag (const char *name, const GdkColor *text,
         gtk_text_tag_table_add (highlight_tag_table, tag);
         gtk_text_tag_set_priority (tag, next_priority);
         next_priority++;
-
-        return tag;
 }
 
 static void highlight_match_one (WString *w_string, int id,
@@ -133,11 +131,11 @@ static void highlight_match_one (WString *w_string, int id,
 {
         int pmatch[HIGHLIGHT_MATCHES * 3];
         int matches;
-        int i, offset;
+        guint i, offset;
 
         offset = 0;
         while ((matches = pcre_exec (regex, NULL, w_string->string->str,
-                                        w_string->string->len, offset, 0,
+                                        (int)w_string->string->len, offset, 0,
                                         pmatch, HIGHLIGHT_MATCHES * 3)) > 0) {
 
                 for (i = 0; i < matches; i++) {
@@ -252,7 +250,7 @@ static pcre *highlight_compile_regex (const char *string,
 }
 
 /* get the priority of the match of string[id] */
-static gint get_priority (int id, int n)
+static gint get_priority (guint id, guint n)
 {
 	GtkTextTag *tag;
 
@@ -278,9 +276,9 @@ static void change_string (const char *key, gpointer user_data)
         highlight->regex = highlight_compile_regex (string, case_sensitive);
 }
 
-static void highlight_remove_tags (int id)
+static void highlight_remove_tags (guint id)
 {
-        int n;
+        guint n;
 
         for (n = 0; n < HIGHLIGHT_MATCHES; n++) {
                 GtkTextTag *tag;
@@ -320,7 +318,7 @@ highlight_remove (GSList *highlight_link)
         WarlockHighlight *highlight;
         GSList *cur;
         char *key;
-        int i, id;
+        guint i, id;
 
         g_assert (highlight_link != NULL);
         highlight = highlight_link->data;
@@ -361,12 +359,12 @@ highlight_remove (GSList *highlight_link)
         g_free (key);
 }
 
-static void highlight_add (int id)
+static void highlight_add (guint id)
 {
         WarlockHighlight *highlight;
         const char *string;
         gboolean case_sensitive;
-        int i;
+        guint i;
         char *name;
 
         string = preferences_get_string (preferences_get_highlight_key (id,
@@ -452,7 +450,7 @@ static void change_index (const char *key, gpointer user_data)
                 for (cur = list, highlight = highlight_list;
                                 highlight != NULL;
                                 cur = cur->next, highlight = highlight->next) {
-                        int id;
+                        guint id;
 
                         id = ((WarlockHighlight*)highlight->data)->id;
                         if (cur == NULL || (id != GPOINTER_TO_INT (cur->data) 
@@ -470,9 +468,9 @@ static void change_index (const char *key, gpointer user_data)
                 for (cur = list, highlight = highlight_list;
                                 cur != NULL;
                                 cur = cur->next, highlight = highlight->next) {
-                        int id;
+                        guint id;
 
-                        id = GPOINTER_TO_INT (cur->data);
+                        id = (guint)GPOINTER_TO_INT (cur->data);
                         if (highlight == NULL ||
                                         (((WarlockHighlight*)highlight->data)
                                          ->id != id &&

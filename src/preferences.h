@@ -91,10 +91,10 @@ void preferences_init (void);
 
 char *preferences_get_global_key (Preference id);
 char *preferences_get_key (Preference id);
-char *preferences_get_highlight_key (int highlight_id, Preference pref_id);
-char *preferences_get_highlight_match_key (int highlight_id, int match_id,
+char *preferences_get_highlight_key (guint highlight_id, Preference pref_id);
+char *preferences_get_highlight_match_key (guint highlight_id, guint match_id,
                 Preference pref_id);
-char *preferences_get_profile_key (int profile_id, Preference pref_id);
+char *preferences_get_profile_key (guint profile_id, Preference pref_id);
 
 void preferences_set_bool (const char *key, gboolean b);
 gboolean preferences_get_bool (const char *key);

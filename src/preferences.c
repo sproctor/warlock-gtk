@@ -225,7 +225,7 @@ char *preferences_get_key (Preference id)
         return gconf_concat_dir_and_key (profile->path, key);
 }
 
-char *preferences_get_highlight_key (int highlight_id, Preference pref_id)
+char *preferences_get_highlight_key (guint highlight_id, Preference pref_id)
 {
         char *dir;
         const char *key;
@@ -249,7 +249,7 @@ char *preferences_get_highlight_key (int highlight_id, Preference pref_id)
                         (preferences_get_key (PREF_HIGHLIGHTS), dir), key);
 }
 
-char *preferences_get_highlight_match_key (int highlight_id, int match_id,
+char *preferences_get_highlight_match_key (guint highlight_id, guint match_id,
                 Preference pref_id)
 {
         const char *key;
@@ -278,7 +278,7 @@ char *preferences_get_highlight_match_key (int highlight_id, int match_id,
                         (preferences_get_key (PREF_HIGHLIGHTS), dir), key);
 }
 
-char *preferences_get_profile_key (int profile_id, Preference pref_id)
+char *preferences_get_profile_key (guint profile_id, Preference pref_id)
 {
         const char *key;
         char *dir;
@@ -336,7 +336,7 @@ gboolean preferences_get_bool (const char *key)
         return b;
 }
 
-void preferences_set_int (const char *key, int i)
+void preferences_set_int (const char *key, gint i)
 {
         GError *err;
 

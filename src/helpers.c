@@ -49,8 +49,11 @@ gdk_color_from_string (const char *string)
 	} else {
 		GdkColor *color;
 		color = g_new (GdkColor, 1);
-		gdk_color_parse (string, color);
-		return color;
+		if (gdk_color_parse (string, color)) {
+			return color;
+		} else {
+			return NULL;
+		}
 	}
 }
 
@@ -68,9 +71,10 @@ gdk_color_to_string (const GdkColor *color)
 gboolean
 is_direction (const char *dir)
 {
-	int i;
+	guint i;
 
-	for(i = 0; i < sizeof(valid_directions) / sizeof(const char*); i++) {
+	for(i = 0; i < (guint)sizeof(valid_directions) /
+			(guint)sizeof(const char*); i++) {
 		if (strcmp(valid_directions[i], dir) == 0)
 			return TRUE;
 	}
