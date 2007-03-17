@@ -308,7 +308,7 @@ foreach_lock_unlock (EggDockItem *item,
     if (egg_dock_object_is_compound (EGG_DOCK_OBJECT (item)))
         gtk_container_foreach (GTK_CONTAINER (item),
                                (GtkCallback) foreach_lock_unlock,
-                               (gpointer) locked);
+                               GINT_TO_POINTER(locked));
 }
 
 static void
@@ -326,7 +326,7 @@ egg_dock_master_lock_unlock (EggDockMaster *master,
     /* just to be sure hidden items are set too */
     egg_dock_master_foreach (master,
                              (GFunc) foreach_lock_unlock,
-                             (gpointer) locked);
+                             GINT_TO_POINTER(locked));
 }
 
 static void

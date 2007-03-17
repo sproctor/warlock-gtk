@@ -391,7 +391,7 @@ void
 on_script_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
                 gpointer user_data)
 {
-        char *filename, *key;
+        char *filename, *key, *old_filename;
 
         debug ("script filename changed\n");
 
@@ -402,9 +402,11 @@ on_script_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
 
         // update the setting if it needs to be
         key = preferences_get_key (PREF_SCRIPT_PATH);
-        if (strcmp (filename, preferences_get_string (key)) != 0) {
+	old_filename = preferences_get_string (key);
+        if (old_filename == NULL || strcmp (filename, old_filename) != 0) {
                 preferences_set_string (key, filename);
         }
+	g_free (old_filename);
         g_free (key);
 
         g_free (filename);

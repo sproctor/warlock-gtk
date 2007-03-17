@@ -1996,7 +1996,7 @@ parse_hand (char *str)
         char *new_string;
         int i;
 
-        debug ("hand string length: %d\n", strlen (str));
+        debug ("hand string length: %ui\n", (unsigned int) strlen (str));
         g_assert (strlen (str) == 45);
 
         new_string = g_new (char, 48);
