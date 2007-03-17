@@ -721,6 +721,7 @@ script_variable_exists (const char *name)
 static void
 script_variable_unset (const char *name)
 {
+	// TODO the value should be freed here
 	g_hash_table_remove (variables_table, name);
 }
 
@@ -926,16 +927,16 @@ script_shift (GList *args)
 {
 	int i;
 
+	script_variable_unset ("1");
         for (i = 1; ; i++) {
 		ScriptData *arg;
 
-                script_variable_unset (itoa (i));
                 arg = script_variable_lookup (itoa (i + 1));
                 if (arg == NULL) {
+			script_variable_unset (itoa (i));
                         break;
                 }
 		script_variable_set (itoa (i), arg);
-		g_free (arg);
         }
 }
 
