@@ -118,7 +118,7 @@ static void
 on_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
                 gpointer user_data)
 {
-        char *filename, *key, *old_filename;
+        char *filename, *key;
 	Preference pref;
 
 	pref = GPOINTER_TO_INT (user_data);
@@ -130,17 +130,11 @@ on_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
                 return;
         }
 
-        debug ("%s changed: %s\n", key, filename);
+        // update the setting
+	preferences_set_string (key, filename);
+	debug ("%s changed: %s\n", key, filename);
 
-        // update the setting if it needs to be
-	// do we really need to do this?
-	old_filename = preferences_get_string (key);
-        if (old_filename == NULL || strcmp (filename, old_filename) != 0) {
-                preferences_set_string (key, filename);
-        }
-	g_free (old_filename);
         g_free (key);
-
         g_free (filename);
 }
 
