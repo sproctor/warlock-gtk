@@ -37,127 +37,122 @@
 extern GladeXML *warlock_xml;
 
 static void
-notify_toggle (const char *key, gpointer user_data)
+on_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 {
-        GtkWidget *widget;
-        gboolean bval;
+	Preference pref;
 
-        widget = user_data;
-        bval = preferences_get_bool (key);
-        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), bval);
+	pref = GPOINTER_TO_INT (user_data);
+        preferences_set_bool (preferences_get_key (pref),
+                        gtk_toggle_button_get_active (togglebutton));
 }
 
 static void
-init_toggle (char *name, Preference key)
+init_toggle (char *name, Preference pref)
 {
         gboolean bval;
         GtkWidget *widget;
 
         widget = glade_xml_get_widget (warlock_xml, name);
 
-        bval = preferences_get_bool (preferences_get_key (key));
+        bval = preferences_get_bool (preferences_get_key (pref));
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), bval);
 
-        preferences_notify_add (preferences_get_key (key), notify_toggle,
-                        widget);
+	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK
+			(on_checkbutton_toggled), GINT_TO_POINTER (pref));
 }
 
 static void
-notify_spin (const char *key, gpointer user_data)
+on_spinbutton_value_changed (GtkSpinButton *spinbutton,
+                gpointer user_data)
 {
-        GtkWidget *widget;
-        int ival;
+	Preference pref;
 
-        widget = user_data;
-        ival = preferences_get_int (key);
-        gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), (double)ival);
+	pref = GPOINTER_TO_INT (user_data);
+        preferences_set_int (preferences_get_key (pref),
+                        gtk_spin_button_get_value_as_int (spinbutton));
 }
 
 static void
-init_spin (char *name, Preference key)
+init_spin (char *name, Preference pref)
 {
         GtkWidget *widget;
         int ival;
 
         widget = glade_xml_get_widget (warlock_xml, name);
 
-        ival = preferences_get_int (preferences_get_key (key));
+        ival = preferences_get_int (preferences_get_key (pref));
         gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), (double)ival);
 
-        preferences_notify_add (preferences_get_key (key), notify_spin,
-                        widget);
+	g_signal_connect (G_OBJECT (widget), "value_changed", G_CALLBACK
+			(on_spinbutton_value_changed), GINT_TO_POINTER (pref));
 }
 
 static void
-notify_entry (const char *key, gpointer user_data)
+on_entry_changed (GtkEditable *editable, gpointer user_data)
 {
-        GtkWidget *widget;
-        const char *sval;
+	Preference pref;
 
-        widget = user_data;
-        sval = preferences_get_string (key);
-	if (sval == NULL)
-		sval = "";
-	if (strcmp (gtk_entry_get_text (GTK_ENTRY (widget)), sval) != 0)
-		gtk_entry_set_text (GTK_ENTRY (widget), sval);
+	pref = GPOINTER_TO_INT (user_data);
+        preferences_set_string (preferences_get_key (pref),
+                        gtk_entry_get_text (GTK_ENTRY (editable)));
 }
 
 static void
-init_entry (char *name, Preference key)
+init_entry (char *name, Preference pref)
 {
         GtkWidget *widget;
         char *sval;
 
         widget = glade_xml_get_widget (warlock_xml, name);
 
-        sval = preferences_get_string (preferences_get_key (key));
+        sval = preferences_get_string (preferences_get_key (pref));
 	if (sval != NULL) {
 		gtk_entry_set_text (GTK_ENTRY (widget), sval);
 	}
 
-        preferences_notify_add (preferences_get_key (key), notify_entry,
-                        widget);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK
+			(on_entry_changed), GINT_TO_POINTER (pref));
 }
 
 static void
-notify_file (const char *key, gpointer user_data)
+on_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
+                gpointer user_data)
 {
-        GtkWidget *widget;
-        char *sval;
-        char *filename;
+        char *filename, *key, *old_filename;
+	Preference pref;
 
-        widget = user_data;
-        sval = preferences_get_string (key);
+	pref = GPOINTER_TO_INT (user_data);
+        key = preferences_get_key (pref);
 
-        filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (widget));
+        filename = gtk_file_chooser_get_filename (filechooser);
         if (filename == NULL) {
+		debug ("%s changed to NULL\n", key);
                 return;
         }
 
-        if (strcmp (sval, filename) != 0) {
-		if (!g_path_is_absolute (sval)) {
-			char *tmp;
+        debug ("%s changed: %s\n", key, filename);
 
-			tmp = sval;
-			sval = g_build_filename (g_get_user_data_dir (),
-					sval, NULL);
-			g_free (tmp);
-		}
-		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget),
-				sval);
+        // update the setting if it needs to be
+	// do we really need to do this?
+	old_filename = preferences_get_string (key);
+        if (old_filename == NULL || strcmp (filename, old_filename) != 0) {
+                preferences_set_string (key, filename);
         }
-	g_free (sval);
+	g_free (old_filename);
+        g_free (key);
+
+        g_free (filename);
 }
 
 static void
-init_file (char *name, Preference key)
+init_file (char *name, Preference pref)
 {
         GtkWidget *widget;
         char *sval;
 
         widget = glade_xml_get_widget (warlock_xml, name);
 
-        sval = preferences_get_string (preferences_get_key (key));
+        sval = preferences_get_string (preferences_get_key (pref));
 	debug("sval: %s\n", sval);
 	if (sval != NULL) {
 		// if we got a relative path, make it relative to home dir
@@ -173,8 +168,9 @@ init_file (char *name, Preference key)
 		gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), sval);
 	}
 
-        preferences_notify_add (preferences_get_key (key), notify_file,
-                        widget);
+	g_signal_connect (G_OBJECT (widget), "selection_changed", G_CALLBACK
+			(on_path_filechooserbutton_selection_changed),
+			GINT_TO_POINTER (pref));
 }
 
 static void
@@ -182,11 +178,13 @@ on_color_button_color_set (WarlockColorButton *widget, gpointer user_data)
 {
         GdkColor *color;
         char *key;
+	Preference pref;
 
         debug ("color button color set\n");
         color = warlock_color_button_get_color (widget);
 
-        key = preferences_get_key (GPOINTER_TO_INT (user_data));
+	pref = GPOINTER_TO_INT (user_data);
+        key = preferences_get_key (pref);
         preferences_set_color (key, color);
         g_free (key);
         if (color != NULL) {
@@ -197,29 +195,16 @@ on_color_button_color_set (WarlockColorButton *widget, gpointer user_data)
 static void
 on_font_button_font_set (WarlockFontButton *widget, gpointer user_data)
 {
-        char *key;
-        char *font_name;
+        char *key, *font_name;
+	Preference pref;
 
         font_name = warlock_font_button_get_font_name (widget);
 
-        key = preferences_get_key (GPOINTER_TO_INT (user_data));
+	pref = GPOINTER_TO_INT (user_data);
+        key = preferences_get_key (pref);
         preferences_set_string (key, font_name);
         g_free (key);
         g_free (font_name);
-}
-
-static void
-notify_color (const char *key, gpointer user_data)
-{
-        GtkWidget *widget;
-        GdkColor *color;
-
-        widget = user_data;
-        color = preferences_get_color (key);
-        warlock_color_button_set_color (WARLOCK_COLOR_BUTTON (widget), color);
-        if (color != NULL) {
-                g_free (color);
-        }
 }
 
 static void
@@ -245,22 +230,10 @@ init_color (char *name, Preference pref)
                 g_free (color);
         }
 
-        preferences_notify_add (key, notify_color, widget);
         g_signal_connect (widget, "color-set", G_CALLBACK
                         (on_color_button_color_set), GINT_TO_POINTER (pref));
         g_free (key);
         gtk_widget_show (widget);
-}
-
-static void
-notify_font (const char *key, gpointer user_data)
-{
-        GtkWidget *widget;
-        const char *sval;
-
-        widget = user_data;
-        sval = preferences_get_string (key);
-        warlock_font_button_set_font_name (WARLOCK_FONT_BUTTON (widget), sval);
 }
 
 static void
@@ -285,7 +258,6 @@ init_font (char *name, Preference pref)
                                 sval);
         }
 
-        preferences_notify_add (key, notify_font, widget);
         g_free (key);
         g_signal_connect (widget, "font-set", G_CALLBACK
                         (on_font_button_font_set), GINT_TO_POINTER (pref));
@@ -321,122 +293,6 @@ preferences_dialog_init (void)
 	// Paths
         init_file ("script_path_filechooserbutton", PREF_SCRIPT_PATH);
 	init_file ("log_path_filechooserbutton", PREF_LOG_PATH);
-}
-
-// TODO change the following functions to all use the same function
-//      and map them via a hash or whatever, so we can get rid of the
-//      thousand functions below
-
-EXPORT
-void
-on_echo_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
-{
-        preferences_set_bool (preferences_get_key (PREF_ECHO),
-                        gtk_toggle_button_get_active (togglebutton));
-}
-
-EXPORT
-void
-on_sneak_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
-{
-        preferences_set_bool (preferences_get_key (PREF_AUTO_SNEAK),
-                        gtk_toggle_button_get_active (togglebutton));
-}
-
-EXPORT
-void
-on_log_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
-{
-        preferences_set_bool (preferences_get_key (PREF_AUTO_LOG),
-                        gtk_toggle_button_get_active (togglebutton));
-}
-
-EXPORT
-void
-on_text_buffer_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
-                gpointer user_data)
-{
-        preferences_set_int (preferences_get_key (PREF_TEXT_BUFFER_SIZE),
-                        gtk_spin_button_get_value_as_int (spinbutton));
-}
-
-EXPORT
-void
-on_command_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
-                gpointer user_data)
-{
-        preferences_set_int (preferences_get_key (PREF_COMMAND_SIZE),
-                        gtk_spin_button_get_value_as_int (spinbutton));
-}
-
-EXPORT
-void
-on_history_size_spinbutton_value_changed (GtkSpinButton *spinbutton,
-                gpointer user_data)
-{
-        preferences_set_int (preferences_get_key (PREF_COMMAND_HISTORY_SIZE),
-                        gtk_spin_button_get_value_as_int (spinbutton));
-}
-
-EXPORT
-void
-on_script_prefix_entry_changed (GtkEditable *editable, gpointer user_data)
-{
-        preferences_set_string (preferences_get_key (PREF_SCRIPT_PREFIX),
-                        gtk_entry_get_text (GTK_ENTRY (editable)));
-}
-
-EXPORT
-void
-on_script_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
-                gpointer user_data)
-{
-        char *filename, *key, *old_filename;
-
-        debug ("script filename changed\n");
-
-        filename = gtk_file_chooser_get_filename (filechooser);
-        if (filename == NULL) {
-                return;
-        }
-
-        // update the setting if it needs to be
-        key = preferences_get_key (PREF_SCRIPT_PATH);
-	old_filename = preferences_get_string (key);
-        if (old_filename == NULL || strcmp (filename, old_filename) != 0) {
-                preferences_set_string (key, filename);
-        }
-	g_free (old_filename);
-        g_free (key);
-
-        g_free (filename);
-}
-
-EXPORT
-void
-on_log_path_filechooserbutton_selection_changed (GtkFileChooser *filechooser,
-                gpointer user_data)
-{
-        char *filename, *key, *sval;
-
-        debug ("log filename changed\n");
-
-        filename = gtk_file_chooser_get_filename (filechooser);
-        if (filename == NULL) {
-                return;
-        }
-
-        // update the setting if it needs to be
-        key = preferences_get_key (PREF_LOG_PATH);
-	sval = preferences_get_string (key);
-        if (sval == NULL || strcmp (filename, preferences_get_string (key))
-			!= 0) {
-                preferences_set_string (key, filename);
-        }
-	g_free (sval);
-        g_free (key);
-
-        g_free (filename);
 }
 
 EXPORT

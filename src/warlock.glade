@@ -751,7 +751,6 @@
 		  <property name="active">False</property>
 		  <property name="inconsistent">False</property>
 		  <property name="draw_indicator">True</property>
-		  <signal name="toggled" handler="on_echo_checkbutton_toggled" last_modification_time="Thu, 27 Oct 2005 00:19:34 GMT"/>
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
@@ -777,7 +776,6 @@
 		      <property name="snap_to_ticks">False</property>
 		      <property name="wrap">False</property>
 		      <property name="adjustment">-1 -1 1000000000 1 1024 1024</property>
-		      <signal name="value_changed" handler="on_text_buffer_size_spinbutton_value_changed" last_modification_time="Fri, 14 Oct 2005 02:16:07 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -836,7 +834,6 @@
 		      <property name="snap_to_ticks">False</property>
 		      <property name="wrap">False</property>
 		      <property name="adjustment">1 1 100 1 10 10</property>
-		      <signal name="value_changed" handler="on_command_size_spinbutton_value_changed" last_modification_time="Sun, 12 Sep 2004 18:19:17 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -895,7 +892,6 @@
 		      <property name="snap_to_ticks">False</property>
 		      <property name="wrap">False</property>
 		      <property name="adjustment">-1 -1 500 1 10 10</property>
-		      <signal name="value_changed" handler="on_history_size_spinbutton_value_changed" last_modification_time="Fri, 14 Oct 2005 02:21:08 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -955,7 +951,6 @@
 		      <property name="invisible_char">*</property>
 		      <property name="activates_default">False</property>
 		      <property name="width_chars">3</property>
-		      <signal name="changed" handler="on_script_prefix_entry_changed" last_modification_time="Mon, 13 Sep 2004 01:12:18 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -1007,7 +1002,6 @@
 		  <property name="active">False</property>
 		  <property name="inconsistent">False</property>
 		  <property name="draw_indicator">True</property>
-		  <signal name="toggled" handler="on_sneak_checkbutton_toggled" last_modification_time="Thu, 27 Oct 2005 00:19:42 GMT"/>
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
@@ -1027,7 +1021,6 @@
 		  <property name="active">False</property>
 		  <property name="inconsistent">False</property>
 		  <property name="draw_indicator">True</property>
-		  <signal name="toggled" handler="on_log_checkbutton_toggled" last_modification_time="Thu, 27 Oct 2005 02:45:41 GMT"/>
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
@@ -1630,7 +1623,6 @@
 		      <property name="show_hidden">True</property>
 		      <property name="do_overwrite_confirmation">False</property>
 		      <property name="width_chars">-1</property>
-		      <signal name="selection_changed" handler="on_script_path_filechooserbutton_selection_changed" last_modification_time="Wed, 19 Oct 2005 04:31:24 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -1686,7 +1678,6 @@
 		      <property name="show_hidden">False</property>
 		      <property name="do_overwrite_confirmation">False</property>
 		      <property name="width_chars">-1</property>
-		      <signal name="selection_changed" handler="on_log_path_filechooserbutton_selection_changed" last_modification_time="Wed, 26 Oct 2005 23:13:00 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>

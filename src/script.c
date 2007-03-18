@@ -722,6 +722,7 @@ static void
 script_variable_unset (const char *name)
 {
 	// TODO the value should be freed here
+	// if we do, make sure all callers expect the value to be freed
 	g_hash_table_remove (variables_table, name);
 }
 
@@ -733,7 +734,6 @@ static void
 script_variable_set (const char *name, ScriptData *data)
 {
         script_variable_unset (name);
-
         g_hash_table_insert (variables_table, g_strdup (name), data);
 }
 
@@ -927,7 +927,6 @@ script_shift (GList *args)
 {
 	int i;
 
-	script_variable_unset ("1");
         for (i = 1; ; i++) {
 		ScriptData *arg;
 
