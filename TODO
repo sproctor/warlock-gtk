@@ -4,10 +4,11 @@ Warlock TODO
 For 0.5
 
 - have system messages get their own tag
+- support for names
+- move to GTK 2.10 and get rid of the dock widget in favor of notebook
 
 Maybe 0.5
 - get javascript working
-- support for names
 - search text view for some text
 - implement triggers
 - Figure out what U is
@@ -27,7 +28,7 @@ Future
 - implement \a for macros
 
 - move images to png or svg files and make them prettier
-- force close after some time when the close button is clicked
+- make disconnect do more than send quit
 - squelch lines; also, allow users to define windows and send text to them.
   this can replace the way thoughts, arrivals, etc works.
 - implement interface for showing poison/disease

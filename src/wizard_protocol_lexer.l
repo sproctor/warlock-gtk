@@ -59,6 +59,7 @@ static gboolean quit = FALSE;
 /* local function definitions */
 static char *lexer_string (void);
 static void handle_command (char command, char *params);
+static void arrival_string (void);
 static void output_string (void);
 static void eol_code (void);
 static char *parse_hand (char *str);
@@ -95,6 +96,7 @@ REST		[[:alnum:][:blank:][:punct:]]*(\n|\r\n)
 	highlighting = FALSE;
 }
 <INITIAL>\007		warlock_bell ();
+<INITIAL>(\ \*\ ){ANY}+((\ joins\ the\ adventure\.)|(\ returns\ home\ from\ a\ hard\ day\ of\ adventuring\.)|(\ has\ disconnected\.)){REST} arrival_string();
 <INITIAL>{ANY}+		output_string ();
 <INITIAL>{EOL}		eol_code ();
 .			unhandled_character();
@@ -315,6 +317,19 @@ parse_hand (char *str)
 }
 
 static void
+arrival_string (void)
+{
+	char *string;
+	WString *w_string;
+
+	string = g_strndup (yytext, yyleng);
+	w_string = w_string_new (g_strchomp (string));
+	warlock_view_append ("arrival", w_string);
+	w_string_free (w_string, TRUE);
+	warlock_view_end_line ("arrival");
+}
+
+static void
 output_string (void)
 {
 	WString *string = w_string_new_len (yytext, yyleng);
@@ -372,5 +387,6 @@ wizardparse (void)
 static void
 unhandled_character (void)
 {
-	
+	WString *string = w_string_new_len (yytext, yyleng);
+	debug ("Unhandled character %s\n", string->string->str);
 }

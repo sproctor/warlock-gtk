@@ -349,6 +349,7 @@ warlock_view_init (Preference key, const char *name, const char *title,
         warlock_view = warlock_view_new (text_view);
         warlock_view->widget = dock_item;
         warlock_view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+	warlock_view->buffer = w_string_new ("");
 
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
@@ -433,7 +434,7 @@ warlock_views_init (void)
 			_("Arrivals and Departures"), "arrival_menu_item");
         warlock_view_init (PREF_THOUGHT_VIEW, "thoughts", _("Thoughts"),
 			"thoughts_menu_item");
-        warlock_view_init (PREF_DEATH_VIEW, "deaths", _("Deaths"),
+        warlock_view_init (PREF_DEATH_VIEW, "death", _("Deaths"),
 			"deaths_menu_item");
         warlock_view_init (PREF_FAMILIAR_VIEW, "familiar", _("Familiar"),
 			"familiar_menu_item");

@@ -345,9 +345,9 @@ on_deaths_menu_item_activate           (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
         if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem))) {
-                warlock_view_show ("deaths");
+                warlock_view_show ("death");
         } else {
-                warlock_view_hide ("deaths");
+                warlock_view_hide ("death");
         }
 }
 

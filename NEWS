@@ -1,6 +1,17 @@
 NEWS for Warlock:
 -----------------------
 
+0.5-pre6:
+	- use EggDock for windows
+	- added script commands waitforre, deletevariable, random, call, return,
+	  and if
+	- changed setvar to setvariable
+	- fixed script/log path problems
+	- fixed some printf-style format issues
+	- fixed crash in script_shift
+	- get arrivals working again
+	- fix crash with death window open
+
 0.5-pre5 (2005 Nov 25):
 	- rewritten wizard script engine (should be more accurate)
 	- added setvar to wizard scripts
