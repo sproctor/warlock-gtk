@@ -1375,9 +1375,25 @@ script_call (GList *args)
 static void
 script_return (GList *args)
 {
+	char *operation;
+
 	g_mutex_lock (script_mutex);
-	next_command = position_stack->data;
-	position_stack = g_slist_delete_link (position_stack, position_stack);
+	if (args == NULL || args->data == NULL || args->next == NULL ||
+			args->next->data == NULL) {
+		next_command = position_stack->data;
+		position_stack = g_slist_delete_link (position_stack, position_stack);
+	} else {
+		operation = g_strstrip (g_ascii_strdown (script_data_to_string
+					(args->data), -1));
+		if (strcmp(operation, "cancel") == 0) {
+			position_stack = g_slist_delete_link (position_stack, position_stack);
+		} else {
+			/* Remove Lock Before Generating Error */
+			g_mutex_unlock (script_mutex);
+			script_error("Unknown Return Operation");
+			return;
+		}
+	}
 	g_mutex_unlock (script_mutex);
 }
 
