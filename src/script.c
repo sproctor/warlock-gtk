@@ -118,6 +118,7 @@ static const struct {
 	{"setvariable", script_setvariable},
 	{"deletevariable", script_deletevariable},
 	{"call", script_call},
+	{"gosub", script_call}, /* for Genie2 Pro Compatability */
 	{"return", script_return},
 	{"random", script_random},
 	{"addtohighlightstrings", NULL},
