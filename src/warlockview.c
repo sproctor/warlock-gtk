@@ -64,7 +64,6 @@ extern GladeXML		*warlock_xml;
 extern GtkTextTagTable	*highlight_tag_table;
 extern GtkTextTagTable	*text_tag_table;
 extern gboolean		 script_running;
-extern guint		 script_line;
 
 /* local variables */
 static GtkWidget	*views_dock = NULL;
@@ -519,7 +518,7 @@ do_prompt (void)
 
         if (script_running) {
                 w_string_append_str (string, "[script:");
-		w_string_append_str (string, g_strdup_printf ("%d", script_line));
+		w_string_append_str (string, g_strdup_printf ("%d", script_get_linenum()));
 		w_string_append_str (string, "]");
         }
 

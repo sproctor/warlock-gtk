@@ -130,7 +130,6 @@ static const struct {
 
 /* global variables */
 gboolean script_running = FALSE;
-guint script_line = 0;
 
 /* local variables */
 static GList *curr_command, *next_command;
@@ -654,7 +653,6 @@ script_run (gpointer data)
 		if (!script_running) {
 			break;
 		}
-		script_line = ((ScriptCommand*)curr_command->data)->line_number;
 		script_command_call (curr_command->data);
 
 		// if we're suspended, wait until we aren't to continue
@@ -837,7 +835,7 @@ script_error (const char *fmt, ...)
 
 	gdk_threads_enter ();
 	echo_f ("*** Error in script at line %d: %s ***\n",
-			script_line, str);
+			((ScriptCommand*)curr_command->data)->line_number, str);
 	gdk_threads_leave ();
 
 	g_free (str);
@@ -858,7 +856,7 @@ script_warn (const char *fmt, ...)
 
 	gdk_threads_enter ();
 	echo_f ("*** Warning in script at line %d: %s ***\n",
-			script_line, str);
+			((ScriptCommand*)curr_command->data)->line_number, str);
 	gdk_threads_leave ();
 
 	g_free (str);
@@ -902,6 +900,11 @@ get_line (void)
         } while (line == NULL && script_running);
 
         return line;
+}
+
+/* Gets current line number */
+guint script_get_linenum(void) {
+        return script_running?((ScriptCommand*)curr_command->data)->line_number:0;
 }
 
 static void

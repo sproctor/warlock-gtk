@@ -100,5 +100,6 @@ void script_kill (void);
 void script_toggle_suspend (void);
 void script_got_prompt (void);
 void script_init (void);
+guint script_get_linenum(void);
 
 #endif
