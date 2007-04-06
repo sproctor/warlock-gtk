@@ -254,8 +254,10 @@ script_moved (void)
 void
 script_got_prompt (void)
 {
+        g_mutex_lock (script_mutex);
         prompt_since_put = TRUE;
         g_cond_broadcast (wait_cond);
+        g_mutex_unlock (script_mutex);
 }
 
 static ScriptData *
@@ -1187,12 +1189,12 @@ script_counter (GList *args)
 static void
 script_put (GList *args)
 {
-	if (prompt_since_put == FALSE) {
-		g_mutex_lock (script_mutex);
+	g_mutex_lock (script_mutex);
+	if (!prompt_since_put) {
 		g_cond_wait(wait_cond,script_mutex);
-		g_mutex_unlock (script_mutex);
 	}
 	prompt_since_put = FALSE;
+	g_mutex_unlock (script_mutex);
 	gdk_threads_enter ();
 	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
