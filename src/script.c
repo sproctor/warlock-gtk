@@ -148,7 +148,7 @@ static GAsyncQueue *script_line_queue = NULL;
 
 static GList *match_list = NULL;
 static GSList *position_stack = NULL;
-static long prompts_since_put = 0;
+static gboolean prompt_since_put = FALSE;
 
 /* initialize script variables */
 void
@@ -254,7 +254,7 @@ script_moved (void)
 void
 script_got_prompt (void)
 {
-	++prompts_since_put;
+        prompt_since_put = TRUE;
         g_cond_broadcast (wait_cond);
 }
 
@@ -1187,13 +1187,12 @@ script_counter (GList *args)
 static void
 script_put (GList *args)
 {
-	if (prompts_since_put < 1) {
+	if (prompt_since_put == FALSE) {
 		g_mutex_lock (script_mutex);
 		g_cond_wait(wait_cond,script_mutex);
-		//warlock_pause_wait (1, &script_running);
 		g_mutex_unlock (script_mutex);
 	}
-	prompts_since_put = 0;
+	prompt_since_put = FALSE;
 	gdk_threads_enter ();
 	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
