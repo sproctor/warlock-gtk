@@ -28,9 +28,6 @@
 #include <glade/glade.h>
 #include <glib/gprintf.h>
 
-#include <egg-dock.h>
-#include <egg-dock-item.h>
-
 #include "warlock.h"
 #include "warlockview.h"
 #include "highlight.h"
@@ -66,7 +63,6 @@ extern GtkTextTagTable	*text_tag_table;
 extern gboolean		 script_running;
 
 /* local variables */
-static GtkWidget	*views_dock = NULL;
 static GList		*views = NULL;
 static WarlockView	*main_view = NULL;
 
@@ -107,19 +103,19 @@ change_font (const char *key, gpointer user_data)
 	gtk_widget_modify_font (text_view, font);
 }
 
-static WarlockView *
-warlock_view_new (GtkWidget *text_view)
+static void
+warlock_view_create_text_view (WarlockView *warlock_view)
 {
         PangoFontDescription *font;
         GdkColor *color;
-	WarlockView *warlock_view;
         GtkTextIter iter;
+	GtkWidget *text_view;
         
+        text_view = gtk_text_view_new ();
         gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_view),
                         GTK_WRAP_WORD_CHAR);
         gtk_text_view_set_editable (GTK_TEXT_VIEW (text_view), FALSE);
 
-        warlock_view = g_new (WarlockView, 1);
 
 	views = g_list_append (views, warlock_view);
 
@@ -128,8 +124,6 @@ warlock_view_new (GtkWidget *text_view)
 	gtk_text_view_set_buffer (GTK_TEXT_VIEW (text_view),
 			warlock_view->text_buffer);
 
-	warlock_view->widget = NULL;
-	warlock_view->menuitem = NULL;
         gtk_text_buffer_get_end_iter (warlock_view->text_buffer, &iter);
         warlock_view->mark = gtk_text_buffer_create_mark
                 (warlock_view->text_buffer, NULL, &iter, TRUE);
@@ -173,8 +167,6 @@ warlock_view_new (GtkWidget *text_view)
         /* listen for font change */
         preferences_notify_add (preferences_get_key (PREF_DEFAULT_FONT),
                         change_font, text_view);
-
-        return warlock_view;
 }
 
 // cut off the beginning lines if we have too many
@@ -286,32 +278,57 @@ static void
 view_hide (WarlockView *warlock_view)
 {
         g_return_if_fail (warlock_view != NULL);
+	if (warlock_view->widget == NULL) return;
 
 	//if (!warlock_view->shown) return;
 	 
         g_assert (GTK_IS_WIDGET (warlock_view->widget));
 
-	egg_dock_item_hide_item (EGG_DOCK_ITEM (warlock_view->widget));
+	gtk_widget_destroy (GTK_WIDGET (warlock_view->widget));
+	warlock_view->widget = NULL;
 }
 
 static void
 view_show (WarlockView *view)
 {
+	GtkWidget *window;
+        GtkWidget *frame;
+
         g_assert (view != NULL);
 
 	//if (warlock_view->shown) return;
 
-        g_assert (GTK_IS_WIDGET (view->widget));
+        //g_assert (GTK_IS_WIDGET (view->widget));
 
-	egg_dock_item_show_item (EGG_DOCK_ITEM (view->widget));
+	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (window), view->title);
+        frame = gtk_frame_new (view->title);
+
+        view->widget = window;
+        view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+	view->buffer = w_string_new ("");
+	warlock_view_create_text_view (view);
 
 	/* save the status of the window */
 	if (view->gconf_key != PREF_NONE) {
 		preferences_set_bool (preferences_get_key (view->gconf_key),
 				TRUE);
 	}
+
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW
+			(view->scrolled_window), GTK_POLICY_NEVER,
+			GTK_POLICY_ALWAYS);
+
+        gtk_container_add (GTK_CONTAINER (view->scrolled_window),
+			view->text_view);
+        gtk_container_add (GTK_CONTAINER (frame),
+			view->scrolled_window);
+        gtk_container_add (GTK_CONTAINER (window), frame);
+
+        gtk_widget_show_all (view->widget);
 }
 
+#if 0
 static void
 view_detach (EggDockItem *dockobject, gboolean b, WarlockView *view)
 {
@@ -331,25 +348,20 @@ view_detach (EggDockItem *dockobject, gboolean b, WarlockView *view)
 				(view->menuitem), FALSE);
 	}
 }
+#endif
 
 static WarlockView *
 warlock_view_init (Preference key, const char *name, const char *title,
 		const char *glade_name)
 {
-        GtkWidget *text_view;
-        GtkWidget *dock_item;
-        GtkWidget *frame;
         WarlockView *warlock_view;
 	gboolean shown;
 
-        dock_item = egg_dock_item_new (name, title, EGG_DOCK_ITEM_BEH_NORMAL);
-        frame = gtk_frame_new (title);
-        text_view = gtk_text_view_new ();
-
-        warlock_view = warlock_view_new (text_view);
-        warlock_view->widget = dock_item;
-        warlock_view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-	warlock_view->buffer = w_string_new ("");
+        warlock_view = g_new (WarlockView, 1);
+	warlock_view->widget = NULL;
+	warlock_view->menuitem = NULL;
+	warlock_view->name = name;
+	warlock_view->title = title;
 
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
@@ -357,18 +369,6 @@ warlock_view_init (Preference key, const char *name, const char *title,
 		shown = TRUE;
 	}
 	warlock_view->gconf_key = key;
-
-        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW
-			(warlock_view->scrolled_window), GTK_POLICY_NEVER,
-			GTK_POLICY_ALWAYS);
-
-        gtk_container_add (GTK_CONTAINER (warlock_view->scrolled_window),
-			text_view);
-        gtk_container_add (GTK_CONTAINER (frame),
-			warlock_view->scrolled_window);
-        gtk_container_add (GTK_CONTAINER (dock_item), frame);
-	egg_dock_add_item (EGG_DOCK (views_dock), EGG_DOCK_ITEM (dock_item),
-			EGG_DOCK_CENTER);
 
 	if (glade_name != NULL) {
 		warlock_view->menuitem = glade_xml_get_widget (warlock_xml,
@@ -383,12 +383,10 @@ warlock_view_init (Preference key, const char *name, const char *title,
 		view_hide (warlock_view);
 	}
 
+/*
 	g_signal_connect_after (G_OBJECT (warlock_view->widget), "detach",
 			G_CALLBACK (view_detach), warlock_view);
-
-        gtk_widget_show_all (warlock_view->widget);
-
-	warlock_view->name = name;
+*/
 
         return warlock_view;
 }
@@ -417,16 +415,6 @@ void
 warlock_views_init (void)
 {
         char *key;
-	GtkWidget *box;
-
-	box = glade_xml_get_widget (warlock_xml, "main_window_vbox");
-
-	views_dock = egg_dock_new ();
-	gtk_box_pack_start (GTK_BOX (box), views_dock, TRUE, TRUE, 0);
-	gtk_box_reorder_child (GTK_BOX (box), views_dock, 2);
-	gtk_widget_show (views_dock);
-
-	views = NULL;
 
         main_view = warlock_view_init (PREF_NONE, "main", _("Main"), NULL);
 
@@ -546,7 +534,7 @@ warlock_view_append (const char *name, const WString *w_string)
 	WarlockView *view;
 
 	view = get_view (name);
-	if (view == NULL || !EGG_DOCK_OBJECT_ATTACHED (view->widget)) {
+	if (view == NULL || view->widget == NULL) {
 		view = main_view;
 	}
 	view->buffer = w_string_append (view->buffer, w_string);
@@ -558,7 +546,7 @@ warlock_view_end_line (const char *name)
 	WarlockView *view;
 
 	view = get_view (name);
-	if (view == NULL || !EGG_DOCK_OBJECT_ATTACHED (view->widget)) {
+	if (view == NULL || view->widget == NULL) {
 		view = main_view;
 	}
         view->buffer = w_string_append_c (view->buffer, '\n');

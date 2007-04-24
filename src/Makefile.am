@@ -1,8 +1,7 @@
 INCLUDES = \
         -DPACKAGE_DATA_DIR=\"$(datadir)\" \
         -DPACKAGE_LOCALE_DIR=\"$(prefix)/$(DATADIRNAME)/locale\" \
-        @PACKAGE_CFLAGS@ @PCRE_CFLAGS@ \
-	-I$(top_builddir)/dock
+        @PACKAGE_CFLAGS@ @PCRE_CFLAGS@
 
 BUILT_SOURCES	= script_parser.h
 bin_PROGRAMS    = warlock
@@ -73,8 +72,7 @@ warlock_SOURCES = \
 	yacc_mangle.h \
 	$(jssources)
 
-warlock_LDADD = $(top_builddir)/dock/libegg-dock.la \
-	@PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
+warlock_LDADD = @PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
 warlock_LDFLAGS = -rdynamic
 
 AM_YFLAGS	= -d
