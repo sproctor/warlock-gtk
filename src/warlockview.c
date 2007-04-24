@@ -291,8 +291,7 @@ view_hide (WarlockView *warlock_view)
 static void
 view_show (WarlockView *view)
 {
-	GtkWidget *window;
-        GtkWidget *frame;
+	GtkWidget *frame;
 
         g_assert (view != NULL);
 
@@ -300,11 +299,16 @@ view_show (WarlockView *view)
 
         //g_assert (GTK_IS_WIDGET (view->widget));
 
-	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (window), view->title);
-        frame = gtk_frame_new (view->title);
+	/* FIXME: this is all an awful mess */
+	if (view->widget == NULL) {
+		view->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_window_set_title (GTK_WINDOW (view->widget), view->title);
+		frame = gtk_frame_new (view->title);
+		gtk_container_add (GTK_CONTAINER (view->widget), frame);
+	} else {
+		frame = view->widget;
+	}
 
-        view->widget = window;
         view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 	view->buffer = w_string_new ("");
 	warlock_view_create_text_view (view);
@@ -323,7 +327,6 @@ view_show (WarlockView *view)
 			view->text_view);
         gtk_container_add (GTK_CONTAINER (frame),
 			view->scrolled_window);
-        gtk_container_add (GTK_CONTAINER (window), frame);
 
         gtk_widget_show_all (view->widget);
 }
@@ -366,6 +369,9 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
 	} else {
+		warlock_view->widget = glade_xml_get_widget (warlock_xml,
+				"main_window_frame");
+		// view_show (warlock_view);
 		shown = TRUE;
 	}
 	warlock_view->gconf_key = key;
