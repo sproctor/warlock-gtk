@@ -3,10 +3,10 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.58)
 
-AC_INIT(warlock, 0.5-pre5)
+AC_INIT(warlock, 0.5-pre7)
 
 dnl copyright
-AC_COPYRIGHT([Copyright 2006 Sean Proctor <sproctor@gmail.com>
+AC_COPYRIGHT([Copyright 2007 Sean Proctor <sproctor@gmail.com>
 This configure script may be copied, distributed and modified under the 
 terms of the Warlock license; see COPYING for more details])
 
@@ -39,7 +39,7 @@ fi
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_LIBTOOL
+dnl AC_PROG_LIBTOOL
 
 AM_PROG_LEX
 if test "$LEX" != "flex"; then
@@ -144,17 +144,7 @@ AC_TYPE_SIGNAL
 
 AC_CHECK_FUNCS(memmove strerror timegm)
 
-PKG_CHECK_MODULES(EGG, gtk+-2.0 >= 2.5.0)
-AC_SUBST(EGG_LIBS)
-AC_SUBST(EGG_CFLAGS)
-PKG_CHECK_MODULES(EGG_EXEC, libglade-2.0 gtk+-2.0 >= 2.0.0)
-AC_SUBST(EGG_EXEC_LIBS)
-AC_SUBST(EGG_EXEC_CFLAGS)
-PKG_CHECK_MODULES(EGG_XML, libxml-2.0)
-AC_SUBST(EGG_XML_LIBS)
-AC_SUBST(EGG_XML_CFLAGS)
-
-pkg_modules="gtk+-2.0 >= 2.8 gthread-2.0 libglade-2.0 gconf-2.0"
+pkg_modules="gtk+-2.0 >= 2.10 gthread-2.0 libglade-2.0 gconf-2.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
@@ -242,4 +232,4 @@ else
 	CFLAGS="-O2"
 fi
 
-AC_OUTPUT(Makefile util/Makefile dock/Makefile src/Makefile)
+AC_OUTPUT(Makefile src/Makefile)
