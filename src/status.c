@@ -340,6 +340,8 @@ void status_set (const char *str)
 				dead = TRUE;
                                 new_status[STATUS_DAMAGE] = ICON_DEAD;
 				break;
+			case BANDAGED:
+				break;
 
                         case ' ':
                         case 'K':
