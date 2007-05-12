@@ -46,10 +46,12 @@
      SCRIPT_EOL = 262,
      SCRIPT_IF = 263,
      SCRIPT_THEN = 264,
-     SCRIPT_BINARY_OP = 265,
-     SCRIPT_UNARY_OP = 266,
-     SCRIPT_COMPARE_OP = 267,
-     SCRIPT_TEST_OP = 268
+     SCRIPT_OPEN_PAREN = 265,
+     SCRIPT_CLOSE_PAREN = 266,
+     SCRIPT_BINARY_OP = 267,
+     SCRIPT_UNARY_OP = 268,
+     SCRIPT_COMPARE_OP = 269,
+     SCRIPT_TEST_OP = 270
    };
 #endif
 /* Tokens.  */
@@ -60,10 +62,12 @@
 #define SCRIPT_EOL 262
 #define SCRIPT_IF 263
 #define SCRIPT_THEN 264
-#define SCRIPT_BINARY_OP 265
-#define SCRIPT_UNARY_OP 266
-#define SCRIPT_COMPARE_OP 267
-#define SCRIPT_TEST_OP 268
+#define SCRIPT_OPEN_PAREN 265
+#define SCRIPT_CLOSE_PAREN 266
+#define SCRIPT_BINARY_OP 267
+#define SCRIPT_UNARY_OP 268
+#define SCRIPT_COMPARE_OP 269
+#define SCRIPT_TEST_OP 270
 
 
 
@@ -83,7 +87,7 @@ typedef union YYSTYPE
 	ScriptTestOp		 test_op;
 }
 /* Line 1489 of yacc.c.  */
-#line 87 "script_parser.h"
+#line 91 "script_parser.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

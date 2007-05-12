@@ -52,7 +52,7 @@ static int scripterror (ScriptCommand **command, const char **label,
 }
 
 %token <string> SCRIPT_LABEL SCRIPT_STRING SCRIPT_VARIABLE SCRIPT_IF_
-%token SCRIPT_EOL SCRIPT_IF SCRIPT_THEN
+%token SCRIPT_EOL SCRIPT_IF SCRIPT_THEN SCRIPT_OPEN_PAREN SCRIPT_CLOSE_PAREN
 %token <binary_op> SCRIPT_BINARY_OP
 %token <unary_op> SCRIPT_UNARY_OP
 %token <compare_op> SCRIPT_COMPARE_OP
@@ -131,7 +131,9 @@ script_data:
 		$$->value.as_string = $1; }
 ;
 conditional:
-	  conditional SCRIPT_BINARY_OP conditional	{
+	  SCRIPT_OPEN_PAREN conditional SCRIPT_CLOSE_PAREN	{
+	  	$$ = $2; }
+	| conditional SCRIPT_BINARY_OP conditional	{
 	  	ScriptBinaryExpr *expr;
 		expr = g_new (ScriptBinaryExpr, 1);
 		expr->op = $2;

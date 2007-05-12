@@ -54,6 +54,14 @@ extern gboolean script_running;
 	debug ("script if\n");
 	return SCRIPT_IF;
 }
+<IF>\(				{
+	debug ("script (\n");
+	return SCRIPT_OPEN_PAREN;
+}
+<IF>\)				{
+	debug ("script )\n");
+	return SCRIPT_CLOSE_PAREN;
+}
 <IF>(!=|<>)			{
 	debug ("script notequal\n");
 	yylval.compare_op = SCRIPT_OP_NOTEQUAL;
