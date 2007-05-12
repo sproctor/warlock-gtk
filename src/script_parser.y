@@ -74,22 +74,22 @@ parser:
 		YYACCEPT; }
 ;
 line:
-          exp SCRIPT_EOL		{ $$ = $1; }
+	  SCRIPT_EOL			{
+		$$ = g_new (ScriptCommand, 1);
+		$$->conditionals = NULL;
+		$$->command = NULL;
+	}
+        | exp SCRIPT_EOL		{ $$ = $1; }
         | SCRIPT_LABEL line		{
 		*label = $1;
 		/* make sure that $2 is an actual value (it is safe to assume
 		 * currently, but if that changes, change this as well) */
 		$$ = $2; }
 ;
-exp:	/* empty */			{
-		$$ = g_new (ScriptCommand, 1);
-		$$->conditional = NULL;
-		$$->command = NULL;
-	}
-        | command			{
-		$1->conditional = NULL;
+exp:
+          command			{
 		$$ = $1; }
-        | SCRIPT_IF_ command {
+        | SCRIPT_IF_ exp {
 		ScriptConditional *conditional;
 		ScriptTestExpr *test;
 		ScriptData *data;
@@ -102,17 +102,18 @@ exp:	/* empty */			{
 		conditional = g_new (ScriptConditional, 1);
 		conditional->type = SCRIPT_TEST_EXPR;
 		conditional->expr.test = test;
-		$2->conditional = conditional;
+		$2->conditionals = g_list_append ($2->conditionals, conditional);
 		$$ = $2; }
-	| SCRIPT_IF conditional SCRIPT_THEN command {
-		$4->conditional = $2;
+	| SCRIPT_IF conditional SCRIPT_THEN exp {
+		$4->conditionals = g_list_append ($4->conditionals, $2);
 		$$ = $4; }
 ;
 command:
 	arg_list			{
 		$$ = g_new (ScriptCommand, 1);
 		$$->command = $1;
-		$$->line_number = line_number; }
+		$$->line_number = line_number;
+		$$->conditionals = NULL; }
 ;
 arg_list:
 	/* empty */			{ $$ = NULL; }

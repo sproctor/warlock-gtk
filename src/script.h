@@ -28,7 +28,7 @@ struct _ScriptData {
 struct _ScriptCommand {
 	GList *command;
 	guint line_number;
-	ScriptConditional *conditional;
+	GList *conditionals;
 };
 
 typedef enum {

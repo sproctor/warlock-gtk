@@ -482,6 +482,7 @@ script_command_call (ScriptCommand *command)
 	static pcre *args_regexp = NULL;
 	int len;
 	GList *args;
+	GList *curr_condition;
 
 	if (!script_running) {
 		return;
@@ -492,9 +493,10 @@ script_command_call (ScriptCommand *command)
 		return;
 	}
 
-	/* don't execute if depends_on doesn't exist */
-	if (command->conditional != NULL) {
-		if (!check_conditional (command->conditional)) {
+	/* don't execute if any of our conditions fail */
+	for (curr_condition = command->conditionals; curr_condition != NULL;
+			curr_condition = curr_condition->next) {
+		if (!check_conditional (curr_condition->data)) {
 			return;
 		}
 	}

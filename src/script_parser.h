@@ -82,7 +82,7 @@ typedef union YYSTYPE
 	ScriptCompareOp		 compare_op;
 	ScriptTestOp		 test_op;
 }
-/* Line 1529 of yacc.c.  */
+/* Line 1489 of yacc.c.  */
 #line 87 "script_parser.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
