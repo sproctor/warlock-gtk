@@ -875,7 +875,10 @@ get_line (void)
 
 /* Gets current line number */
 guint script_get_linenum(void) {
-        return script_running?((ScriptCommand*)curr_command->data)->line_number:0;
+        return (script_running && curr_command != NULL
+			&& curr_command->data != NULL)
+		? ((ScriptCommand*)curr_command->data)->line_number
+		: 0;
 }
 
 static void
@@ -934,6 +937,8 @@ script_match (GList *args)
 				(args->next), -1));
 
 	g_mutex_lock (script_mutex);
+	if (match_list == NULL) clear_line_queue ();
+
         match_data->regex = NULL;
         match_data->regex_extra = NULL;
 	match_list = g_list_append (match_list, match_data);
@@ -999,10 +1004,6 @@ regexp_match (pcre *regex, pcre_extra *regex_extra, char *line)
 static void
 script_matchwait (GList *args)
 {
-	g_mutex_lock (script_mutex);
-        clear_line_queue ();
-        g_mutex_unlock (script_mutex);
-
 	while (match_list != NULL && script_running) {
                 GList *curr_match;
                 char *line;
@@ -1015,14 +1016,14 @@ script_matchwait (GList *args)
 
                 g_mutex_lock (script_mutex);
 
-                //debug ("Awoke script_matchwait\n");
+                //debug ("Awoke script_matchwait, line: %s\n", line);
                 curr_match = match_list;
                 while (curr_match != NULL) {
                         MatchData *match_data;
 
                         match_data = curr_match->data;
-                        //debug ("matching string: %s\n", match_data->string);
                         if (match_data->regex == NULL) {
+				//debug ("matching string: %s\n", match_data->string);
                                 if (strstr (line, match_data->string) != NULL) {
                                         goto_label (match_data->label);
                                         g_list_free (match_list);
