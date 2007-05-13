@@ -259,7 +259,7 @@ script_got_prompt (void)
         g_mutex_unlock (script_mutex);
 }
 
-static ScriptData *
+ScriptData *
 string_to_script_data (char *str)
 {
 	ScriptData *data;
@@ -337,64 +337,33 @@ check_unary_expr (ScriptUnaryExpr *expr)
 	}
 }
 
-static gboolean
-script_data_can_cast_integer (ScriptData *data)
-{
-	gboolean rv;
-
-	if (data == NULL) return FALSE;
-
-	switch (data->type) {
-		case SCRIPT_TYPE_INTEGER:
-			rv = TRUE;
-			break;
-
-		case SCRIPT_TYPE_STRING:
-			{
-				char *end;
-				errno = 0;
-				strtol (data->value.as_string, &end, 10);
-				debug ("Errno: %d\n", errno);
-				if (errno != 0 || end == data->value.as_string)
-				{
-					rv = FALSE;
-				} else {
-					rv = TRUE;
-				}
-				errno = 0;
-			}
-			break;
-
-		case SCRIPT_TYPE_VARIABLE:
-			rv = script_data_can_cast_integer (
-					script_variable_lookup (
-						data->value.as_string));
-			break;
-
-		default:
-			g_assert_not_reached ();
-			rv = FALSE;
-	}
-	return rv;
-}
-
 static int
-script_data_compare (ScriptData *lhs, ScriptData *rhs)
+script_data_compare (GList *lhs, GList *rhs)
 {
-	if (script_data_can_cast_integer (lhs) && script_data_can_cast_integer
-			(rhs)) {
-		long l, r;
-		l = script_data_to_integer (lhs);
-		r = script_data_to_integer (rhs);
-		if (l > r) return 1;
-		if (l < r) return -1;
-		return 0;
-	} else {
-		char *l, *r;
-		l = script_data_to_string (lhs);
-		r = script_data_to_string (rhs);
-		return strcmp (l, r);
+	char *l_str, *r_str, *end;
+	long l_int, r_int;
+
+	l_str = g_strstrip (script_list_to_string (lhs));
+	r_str = g_strstrip (script_list_to_string (rhs));
+
+	debug ("lhs: %s, rhs: %s\n", l_str, r_str);
+
+	// test if we can convert our strings to integers
+	errno = 0;
+	l_int = strtol (l_str, &end, 10);
+	if (errno == 0 && end != l_str) {
+		r_int = strtol (r_str, &end, 10);
+		if (errno == 0 && end != r_str) {
+			// We have 2 integers
+			if (l_int > r_int) return 1;
+			if (l_int < r_int) return -1;
+			return 0;
+		}
 	}
+	errno = 0;
+
+	// else we have 2 non-integers
+	return strcmp (l_str, r_str);
 }
 
 static gboolean
@@ -438,8 +407,8 @@ check_test_expr (ScriptTestExpr *expr)
 {
 	switch (expr->op) {
 		case SCRIPT_OP_EXISTS:
-			return script_variable_exists (script_data_to_string
-					(expr->rhs));
+			return script_variable_exists (script_list_to_string
+					(expr->arg));
 
 		default:
 			g_assert_not_reached ();

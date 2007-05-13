@@ -403,7 +403,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  20
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   37
+#define YYLAST   42
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  16
@@ -470,15 +470,15 @@ static const yytype_int8 yyrhs[] =
        3,    18,    -1,    20,    -1,     6,    19,    -1,     8,    23,
        9,    19,    -1,    21,    -1,    -1,    22,    21,    -1,     4,
       -1,     5,    -1,    10,    23,    11,    -1,    23,    12,    23,
-      -1,    13,    23,    -1,    22,    14,    22,    -1,    15,    22,
+      -1,    13,    23,    -1,    21,    14,    21,    -1,    15,    21,
       -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    71,    71,    77,    82,    83,    90,    92,   107,   112,
-     119,   120,   124,   128,   134,   136,   145,   153,   162
+       0,    71,    71,    77,    82,    83,    90,    92,   103,   108,
+     115,   116,   120,   122,   128,   130,   139,   147,   156
 };
 #endif
 
@@ -525,9 +525,9 @@ static const yytype_uint8 yyr2[] =
    means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     0,    12,    13,    10,     3,     0,     0,     2,     0,
-       6,     9,    10,     5,     7,     0,     0,     0,     0,     0,
-       1,     4,    11,     0,    16,    18,     0,    10,     0,    14,
+       0,     0,    12,    13,    10,     3,    10,     0,     2,     0,
+       6,     9,    10,     5,     7,    10,    10,    10,     0,     0,
+       1,     4,    11,     0,    16,    18,    10,    10,    10,    14,
       17,     8,    15
 };
 
@@ -542,16 +542,16 @@ static const yytype_int8 yydefgoto[] =
 #define YYPACT_NINF -11
 static const yytype_int8 yypact[] =
 {
-      24,    24,   -11,   -11,    29,   -11,    -3,     3,   -11,     2,
-     -11,   -11,    12,   -11,   -11,    -3,    -3,    12,     7,    -1,
-     -11,   -11,   -11,     8,    10,   -11,    12,    29,    -3,   -11,
-     -11,   -11,    10
+      24,    24,   -11,   -11,    29,   -11,     7,     3,   -11,     0,
+     -11,   -11,    -3,   -11,   -11,     7,     7,    -3,    -6,    27,
+     -11,   -11,   -11,    30,     4,   -11,    -3,    29,     7,   -11,
+     -11,   -11,     4
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -11,   -11,    35,    -4,   -11,    13,    -2,   -10
+     -11,   -11,     8,    -4,   -11,    -2,   -11,   -10
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -561,18 +561,20 @@ static const yytype_int8 yypgoto[] =
 #define YYTABLE_NINF -1
 static const yytype_uint8 yytable[] =
 {
-      14,     2,     3,    20,    18,    23,    24,    15,    27,    21,
-      16,    28,    17,    18,    18,    25,     2,     3,    32,    29,
-      28,    26,    28,    31,    30,    22,    18,     1,     2,     3,
-       4,     5,     6,     2,     3,     4,    13,     6
+      14,     2,     3,    20,    18,    23,    24,    21,    26,    13,
+      22,     2,     3,    18,    18,    25,    28,    15,    32,     0,
+      16,     0,    17,    31,    30,     0,    18,     1,     2,     3,
+       4,     5,     6,     2,     3,     4,    27,     6,     0,    28,
+       0,    29,    28
 };
 
-static const yytype_uint8 yycheck[] =
+static const yytype_int8 yycheck[] =
 {
-       4,     4,     5,     0,     6,    15,    16,    10,     9,     7,
-      13,    12,    15,    15,    16,    17,     4,     5,    28,    11,
-      12,    14,    12,    27,    26,    12,    28,     3,     4,     5,
-       6,     7,     8,     4,     5,     6,     1,     8
+       4,     4,     5,     0,     6,    15,    16,     7,    14,     1,
+      12,     4,     5,    15,    16,    17,    12,    10,    28,    -1,
+      13,    -1,    15,    27,    26,    -1,    28,     3,     4,     5,
+       6,     7,     8,     4,     5,     6,     9,     8,    -1,    12,
+      -1,    11,    12
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -580,9 +582,9 @@ static const yytype_uint8 yycheck[] =
 static const yytype_uint8 yystos[] =
 {
        0,     3,     4,     5,     6,     7,     8,    17,    18,    19,
-      20,    21,    22,    18,    19,    10,    13,    15,    22,    23,
-       0,     7,    21,    23,    23,    22,    14,     9,    12,    11,
-      22,    19,    23
+      20,    21,    22,    18,    19,    10,    13,    15,    21,    23,
+       0,     7,    21,    23,    23,    21,    14,     9,    12,    11,
+      21,    19,    23
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1458,13 +1460,9 @@ yyreduce:
     {
 		ScriptConditional *conditional;
 		ScriptTestExpr *test;
-		ScriptData *data;
-		data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_STRING;
-		data->value.as_string = (yyvsp[(1) - (2)].string);
 		test = g_new (ScriptTestExpr, 1);
 		test->op = SCRIPT_OP_EXISTS;
-		test->rhs = data;
+		test->arg = g_list_append (NULL, string_to_script_data ((yyvsp[(1) - (2)].string)));
 		conditional = g_new (ScriptConditional, 1);
 		conditional->type = SCRIPT_TEST_EXPR;
 		conditional->expr.test = test;
@@ -1473,14 +1471,14 @@ yyreduce:
     break;
 
   case 8:
-#line 107 "script_parser.y"
+#line 103 "script_parser.y"
     {
 		(yyvsp[(4) - (4)].command)->conditionals = g_list_append ((yyvsp[(4) - (4)].command)->conditionals, (yyvsp[(2) - (4)].conditional));
 		(yyval.command) = (yyvsp[(4) - (4)].command); }
     break;
 
   case 9:
-#line 112 "script_parser.y"
+#line 108 "script_parser.y"
     {
 		(yyval.command) = g_new (ScriptCommand, 1);
 		(yyval.command)->command = (yyvsp[(1) - (1)].list);
@@ -1489,26 +1487,24 @@ yyreduce:
     break;
 
   case 10:
-#line 119 "script_parser.y"
+#line 115 "script_parser.y"
     { (yyval.list) = NULL; }
     break;
 
   case 11:
-#line 120 "script_parser.y"
+#line 116 "script_parser.y"
     {
 		(yyval.list) = g_list_prepend ((yyvsp[(2) - (2)].list), (yyvsp[(1) - (2)].data)); }
     break;
 
   case 12:
-#line 124 "script_parser.y"
+#line 120 "script_parser.y"
     {
-	  	(yyval.data) = g_new (ScriptData, 1);
-		(yyval.data)->type = SCRIPT_TYPE_STRING;
-		(yyval.data)->value.as_string = (yyvsp[(1) - (1)].string); }
+	  	(yyval.data) = string_to_script_data ((yyvsp[(1) - (1)].string)); }
     break;
 
   case 13:
-#line 128 "script_parser.y"
+#line 122 "script_parser.y"
     {
 		(yyval.data) = g_new (ScriptData, 1);
 		(yyval.data)->type = SCRIPT_TYPE_VARIABLE;
@@ -1516,13 +1512,13 @@ yyreduce:
     break;
 
   case 14:
-#line 134 "script_parser.y"
+#line 128 "script_parser.y"
     {
 	  	(yyval.conditional) = (yyvsp[(2) - (3)].conditional); }
     break;
 
   case 15:
-#line 136 "script_parser.y"
+#line 130 "script_parser.y"
     {
 	  	ScriptBinaryExpr *expr;
 		expr = g_new (ScriptBinaryExpr, 1);
@@ -1535,7 +1531,7 @@ yyreduce:
     break;
 
   case 16:
-#line 145 "script_parser.y"
+#line 139 "script_parser.y"
     {
 		ScriptUnaryExpr *expr;
 		expr = g_new (ScriptUnaryExpr, 1);
@@ -1547,25 +1543,25 @@ yyreduce:
     break;
 
   case 17:
-#line 153 "script_parser.y"
+#line 147 "script_parser.y"
     {
 		ScriptCompareExpr *expr;
 		expr = g_new (ScriptCompareExpr, 1);
 		expr->op = (yyvsp[(2) - (3)].compare_op);
-		expr->lhs = (yyvsp[(1) - (3)].data);
-		expr->rhs = (yyvsp[(3) - (3)].data);
+		expr->lhs = (yyvsp[(1) - (3)].list);
+		expr->rhs = (yyvsp[(3) - (3)].list);
 		(yyval.conditional) = g_new (ScriptConditional, 1);
 		(yyval.conditional)->type = SCRIPT_COMPARE_EXPR;
 		(yyval.conditional)->expr.compare = expr; }
     break;
 
   case 18:
-#line 162 "script_parser.y"
+#line 156 "script_parser.y"
     {
 		ScriptTestExpr *expr;
 		expr = g_new (ScriptTestExpr, 1);
 		expr->op = (yyvsp[(1) - (2)].test_op);
-		expr->rhs = (yyvsp[(2) - (2)].data);
+		expr->arg = (yyvsp[(2) - (2)].list);
 		(yyval.conditional) = g_new (ScriptConditional, 1);
 		(yyval.conditional)->type = SCRIPT_TEST_EXPR;
 		(yyval.conditional)->expr.test = expr; }
@@ -1573,7 +1569,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1577 "script_parser.c"
+#line 1573 "script_parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1787,7 +1783,7 @@ yyreturn:
 }
 
 
-#line 171 "script_parser.y"
+#line 165 "script_parser.y"
 
 
 /*

@@ -92,13 +92,9 @@ exp:
         | SCRIPT_IF_ exp {
 		ScriptConditional *conditional;
 		ScriptTestExpr *test;
-		ScriptData *data;
-		data = g_new (ScriptData, 1);
-		data->type = SCRIPT_TYPE_STRING;
-		data->value.as_string = $1;
 		test = g_new (ScriptTestExpr, 1);
 		test->op = SCRIPT_OP_EXISTS;
-		test->rhs = data;
+		test->arg = g_list_append (NULL, string_to_script_data ($1));
 		conditional = g_new (ScriptConditional, 1);
 		conditional->type = SCRIPT_TEST_EXPR;
 		conditional->expr.test = test;
@@ -122,9 +118,7 @@ arg_list:
 ;
 script_data:
 	  SCRIPT_STRING			{
-	  	$$ = g_new (ScriptData, 1);
-		$$->type = SCRIPT_TYPE_STRING;
-		$$->value.as_string = $1; }
+	  	$$ = string_to_script_data ($1); }
 	| SCRIPT_VARIABLE		{
 		$$ = g_new (ScriptData, 1);
 		$$->type = SCRIPT_TYPE_VARIABLE;
@@ -150,7 +144,7 @@ conditional:
 		$$ = g_new (ScriptConditional, 1);
 		$$->type = SCRIPT_UNARY_EXPR;
 		$$->expr.unary = expr; }
-	| script_data SCRIPT_COMPARE_OP script_data	{
+	| arg_list SCRIPT_COMPARE_OP arg_list	{
 		ScriptCompareExpr *expr;
 		expr = g_new (ScriptCompareExpr, 1);
 		expr->op = $2;
@@ -159,11 +153,11 @@ conditional:
 		$$ = g_new (ScriptConditional, 1);
 		$$->type = SCRIPT_COMPARE_EXPR;
 		$$->expr.compare = expr; }
-	| SCRIPT_TEST_OP script_data	{
+	| SCRIPT_TEST_OP arg_list	{
 		ScriptTestExpr *expr;
 		expr = g_new (ScriptTestExpr, 1);
 		expr->op = $1;
-		expr->rhs = $2;
+		expr->arg = $2;
 		$$ = g_new (ScriptConditional, 1);
 		$$->type = SCRIPT_TEST_EXPR;
 		$$->expr.test = expr; }

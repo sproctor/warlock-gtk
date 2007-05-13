@@ -84,13 +84,13 @@ struct _ScriptUnaryExpr {
 
 struct _ScriptCompareExpr {
 	ScriptCompareOp	 op;
-	ScriptData	*lhs;
-	ScriptData	*rhs;
+	GList		*lhs;
+	GList		*rhs;
 };
 
 struct _ScriptTestExpr {
 	ScriptTestOp	 op;
-	ScriptData	*rhs;
+	GList		*arg;
 };
 
 void script_load (const char *filename, int argc, const char **argv);
@@ -101,5 +101,6 @@ void script_toggle_suspend (void);
 void script_got_prompt (void);
 void script_init (void);
 guint script_get_linenum(void);
+ScriptData *string_to_script_data (char *str);
 
 #endif

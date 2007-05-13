@@ -49,7 +49,7 @@ extern gboolean script_running;
         yy_push_state (IF_);
         debug ("script if_\n");
 }
-<INITIAL>if[[:blank:]]		{
+<INITIAL>if[[:blank:]]*		{
 	yy_push_state (IF);
 	debug ("script if\n");
 	return SCRIPT_IF;
@@ -107,12 +107,12 @@ extern gboolean script_running;
 	yylval.unary_op = SCRIPT_OP_NOT;
 	return SCRIPT_UNARY_OP;
 }
-<IF>exists			{
+<IF>exists[[:blank:]]*			{
 	debug ("script exists\n");
 	yylval.test_op = SCRIPT_OP_EXISTS;
 	return SCRIPT_TEST_OP;
 }
-<IF>then			{
+<IF>then[[:blank:]]*			{
 	debug ("THEN\n");
 	yy_pop_state ();
 	return SCRIPT_THEN;
@@ -168,7 +168,7 @@ extern gboolean script_running;
 <IF,COMMAND,QUOTE>%		{
 	yy_push_state (VAR);
 }
-<IF>[[:alnum:]]+	{
+<IF>[_[:alnum:]]+[[:blank:]]*	{
 	yylval.string = lexer_string ();
 	debug ("script if_string: %s\n", yylval.string);
 	return SCRIPT_STRING;
