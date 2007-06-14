@@ -1164,12 +1164,14 @@ script_counter (GList *args)
 static void
 script_put (GList *args)
 {
+	// Make sure we got a prompt since the last put
 	g_mutex_lock (script_mutex);
 	if (!prompt_since_put) {
 		g_cond_wait(wait_cond,script_mutex);
 	}
 	prompt_since_put = FALSE;
 	g_mutex_unlock (script_mutex);
+
 	gdk_threads_enter ();
 	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
@@ -1193,14 +1195,13 @@ script_goto (GList *args)
 static void
 script_move (GList *args)
 {
-	g_mutex_lock (script_mutex);
-
+	// Always acquire the gdk thread before the script_mutex
 	gdk_threads_enter ();
+	g_mutex_lock (script_mutex);
 	warlock_send ("%s", script_list_to_string (args));
 	gdk_threads_leave ();
 
         next_room_wait (script_mutex);
-
 	g_mutex_unlock (script_mutex);
 
 	warlock_roundtime_wait (&script_running);
