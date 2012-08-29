@@ -118,6 +118,10 @@ update_history (const char *string)
                                 g_strdup(string));
                 trim_history ();
         }
+
+	// save the history
+        preferences_set_list (preferences_get_key (PREF_COMMAND_HISTORY),
+                        PREFERENCES_VALUE_STRING, command_history);
 }
 
 static void
@@ -247,13 +251,13 @@ warlock_entry_submit (void)
         gtk_entry_set_text(GTK_ENTRY(entry), "");
 }
 
-static void
-entry_finish (void)
+static gboolean
+entry_finish (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-        preferences_set_list (preferences_get_key (PREF_COMMAND_HISTORY),
-                        PREFERENCES_VALUE_STRING, command_history);
         preferences_notify_remove (command_size_notification);
         preferences_notify_remove (history_size_notification);
+
+	return FALSE;
 }
 
 static void
@@ -294,7 +298,10 @@ warlock_entry_init (GtkWidget *widget)
         key = preferences_get_key (PREF_COMMAND_HISTORY);
         command_history = preferences_get_list (key, PREFERENCES_VALUE_STRING);
         g_free(key);
-        g_atexit (entry_finish);
+
+	// Clean-up when the widget is destroyed
+        g_signal_connect (entry, "delete-event", G_CALLBACK(entry_finish),
+			NULL);
 }
 
 void

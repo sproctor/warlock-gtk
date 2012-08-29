@@ -136,10 +136,8 @@ static void cell_edited (GtkCellRendererText *cellrenderertext,
 static void rebuild_list (void)
 {
         GSList *macro_pref_list, *cur;
-        GtkListStore *old_list;
         GtkWidget *macro_view;
 
-        old_list = macro_list;
         macro_view = glade_xml_get_widget (warlock_xml, "macro_view");
 
 
@@ -298,7 +296,6 @@ static void create_macro_grab_dialog (char *key)
 {
         GtkWidget *dialog;
         GtkWidget *label;
-        int response;
 
         dialog = gtk_dialog_new_with_buttons (_("Macro Key"),
                         GTK_WINDOW (glade_xml_get_widget (warlock_xml,
@@ -312,10 +309,9 @@ static void create_macro_grab_dialog (char *key)
                                 "associated with a command."));
         gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
         gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), label);
-        gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
         gtk_widget_show_all (dialog);
 
-        response = gtk_dialog_run (GTK_DIALOG (dialog));
+        gtk_dialog_run (GTK_DIALOG (dialog));
         gtk_widget_destroy (dialog);
 }
 

@@ -203,7 +203,6 @@ static void load_profile (SgeState state, gpointer user_data)
         GtkWidget *prev_button;
         GtkWidget *button_box;
         GtkWidget *status_label;
-        gboolean finished = FALSE;
         int table_pos;
         int id;
 
@@ -252,7 +251,6 @@ static void load_profile (SgeState state, gpointer user_data)
                         gtk_entry_set_text (GTK_ENTRY (pass_widget), password);
                         g_free (password);
                 }
-                finished = TRUE;
         }
 
         if (state >= SGE_MENU) {
@@ -295,12 +293,12 @@ static void load_profile (SgeState state, gpointer user_data)
                 GSList *cur;
                 int i, pos;
 
-                game_widget = gtk_combo_box_new_text ();
+                game_widget = gtk_combo_box_text_new ();
                 pos = 0;
                 for (cur = user_data, i = 0; cur != NULL;
                                 cur = cur->next, i++) {
-                        gtk_combo_box_append_text (GTK_COMBO_BOX (game_widget),
-                                        cur->data);
+                        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT
+					(game_widget), cur->data);
                         if (game_name != NULL
                                         && strcmp (cur->data, game_name) == 0) {
                                 pos = i;
@@ -328,12 +326,12 @@ static void load_profile (SgeState state, gpointer user_data)
                 GSList *cur;
                 int pos, i;
 
-                char_widget = gtk_combo_box_new_text ();
+                char_widget = gtk_combo_box_text_new ();
                 pos = 0;
                 for (cur = user_data, i = 0; cur != NULL;
                                 cur = cur->next, i++) {
-                        gtk_combo_box_append_text (GTK_COMBO_BOX (char_widget),
-                                        cur->data);
+                        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT
+					(char_widget), cur->data);
                         if (char_name != NULL
                                         && strcmp (cur->data, char_name) == 0) {
                                 pos = i;

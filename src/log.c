@@ -77,7 +77,8 @@ save_log (const char *filename)
 
 	g_free (history);
 
-	g_io_channel_close (file);
+	g_io_channel_shutdown (file, TRUE, &err);
+	print_error (err);
 	g_io_channel_unref (file);
 }
 
@@ -131,7 +132,9 @@ log_toggle (void)
 					err->message, filename);
 		}
 	} else if (!autolog && log_file != NULL) {
-		g_io_channel_close (log_file);
+		GError *err = NULL;
+		g_io_channel_shutdown (log_file, TRUE, &err);
+		print_error (err);
 		g_io_channel_unref (log_file);
 		log_file = NULL;
 	}
