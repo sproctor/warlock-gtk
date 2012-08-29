@@ -994,6 +994,7 @@ regexp_match (pcre *regex, pcre_extra *regex_extra, char *line)
 			data = string_to_script_data (g_strndup (
 						line + matches[i * 2],
 						matches[i * 2 + 1]));
+			script_variable_set (name, data);
 		}
 		return TRUE;
 	}
