@@ -52,7 +52,7 @@ GtkTextTagTable *highlight_tag_table = NULL;
 static void changed_text (const char *key, gpointer user_data)
 {
         GtkTextTag *tag;
-        GdkColor *color;
+        GdkRGBA *color;
         char *name;
 
         name = user_data;
@@ -62,13 +62,13 @@ static void changed_text (const char *key, gpointer user_data)
 
         color = preferences_get_color (key);
 
-	g_object_set (G_OBJECT (tag), "foreground-gdk", color, NULL);
+	g_object_set (G_OBJECT (tag), "foreground-rgba", color, NULL);
 }
 
-static void changed_base (const char *key, gpointer user_data)
+static void changed_background (const char *key, gpointer user_data)
 {
         GtkTextTag *tag;
-        GdkColor *color;
+        GdkRGBA *color;
         char *name;
 
         name = user_data;
@@ -78,7 +78,7 @@ static void changed_base (const char *key, gpointer user_data)
 
         color = preferences_get_color (key);
 
-	g_object_set (G_OBJECT (tag), "background-gdk", color, NULL);
+	g_object_set (G_OBJECT (tag), "background-rgba", color, NULL);
 }
 
 static void changed_font (const char *key, gpointer user_data)
@@ -103,8 +103,8 @@ static gchar *mangle_name (guint id, guint n)
         return g_strdup_printf ("%06X.%d", id, n);
 }
 
-static void highlight_add_tag (const char *name, const GdkColor *text,
-                const GdkColor *base, const char *font)
+static void highlight_add_tag (const char *name, const GdkRGBA *text,
+                const GdkRGBA *background, const char *font)
 {
         GtkTextTag *tag;
 
@@ -117,8 +117,8 @@ static void highlight_add_tag (const char *name, const GdkColor *text,
         tag = gtk_text_tag_new (name);
 
 	g_object_set (G_OBJECT (tag),
-			"foreground-gdk", text,
-			"background-gdk", base,
+			"foreground-rgba", text,
+			"background-rgba", background,
 			"font", font, NULL);
         gtk_text_tag_table_add (highlight_tag_table, tag);
         gtk_text_tag_set_priority (tag, next_priority);
@@ -202,19 +202,19 @@ static void highlight_add_tags (guint id)
 	int i;
 
         for (i = 0; i < HIGHLIGHT_MATCHES; i++) {
-                GdkColor *text, *base;
+                GdkRGBA *text, *background;
                 char *font;
 
                 text = preferences_get_color (
                                 preferences_get_highlight_match_key (id, i,
                                         PREF_HIGHLIGHT_MATCH_TEXT_COLOR));
-                base = preferences_get_color (
+                background = preferences_get_color (
                                 preferences_get_highlight_match_key (id, i,
                                         PREF_HIGHLIGHT_MATCH_BASE_COLOR));
                 font = preferences_get_string (
                                 preferences_get_highlight_match_key (id, i,
                                         PREF_HIGHLIGHT_MATCH_FONT));
-                highlight_add_tag (mangle_name (id, i), text, base, font);
+                highlight_add_tag (mangle_name (id, i), text, background, font);
         }
 }
 
@@ -405,7 +405,7 @@ static void highlight_add (guint id)
                          (preferences_notify_add
                           (preferences_get_highlight_match_key
                            (id, i, PREF_HIGHLIGHT_MATCH_BASE_COLOR),
-                           changed_base, name)));
+                           changed_background, name)));
 
                 highlight->gconf_connections = g_slist_append
                         (highlight->gconf_connections, GINT_TO_POINTER
@@ -485,9 +485,9 @@ static void change_index (const char *key, gpointer user_data)
 
 static void
 add_general_tag (char* tag_name, Preference text_pref,
-                Preference base_pref, Preference font_pref)
+                Preference background_pref, Preference font_pref)
 {
-        GdkColor *fg_color, *bg_color;
+        GdkRGBA *fg_color, *bg_color;
         char *font;
         char *key;
 
@@ -500,9 +500,9 @@ add_general_tag (char* tag_name, Preference text_pref,
         g_free (key);
 
         /* base color */
-        key = preferences_get_key (base_pref);
+        key = preferences_get_key (background_pref);
         bg_color = preferences_get_color (key);
-        preferences_notify_add (key, changed_base, tag_name);
+        preferences_notify_add (key, changed_background, tag_name);
         g_free (key);
 
         /* font */

@@ -80,7 +80,7 @@ AC_TYPE_SIGNAL
 
 AC_CHECK_FUNCS(memmove strerror timegm)
 
-pkg_modules="gtk+-2.0 >= 2.24 gthread-2.0 gconf-2.0"
+pkg_modules="gtk+-3.0 gconf-2.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
@@ -157,15 +157,16 @@ AC_CHECK_FUNCS([gethostbyname memset socket strstr])
 dnl Options
 dnl This breaks windows... so before we try to port to windows, make sure
 dnl we don't sack the CFLAGS, or change the line above
+CFLAGS="$CFLAGS -DGSEAL_ENABLE"
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 	AC_DEFINE(DEBUG, 1, [enable debugging])
-	CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
+	CFLAGS="$CFLAGS -g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
 	if $our_gcc -v --help 2>/dev/null | grep pointer-sign >/dev/null; then
-		CFLAGS+=" -Wno-pointer-sign"
+		CFLAGS="$CFLAGS -Wno-pointer-sign"
 	fi
 	AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
 else
-	CFLAGS="-O2"
+	CFLAGS="$CFLAGS -O2"
 fi
 
 AC_OUTPUT(Makefile src/Makefile)

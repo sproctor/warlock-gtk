@@ -137,10 +137,10 @@ static char *prompt_string (const char *title)
 	entry = gtk_entry_new();
 	gtk_entry_set_activates_default (GTK_ENTRY (entry), TRUE);
 	label = gtk_label_new (_("Enter text:"));
-	gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox), label, TRUE,
-			TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox), entry, TRUE,
-			TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG
+					(dialog))), label, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG
+					(dialog))), entry, TRUE, TRUE, 0);
 	gtk_widget_show_all (dialog);
 
 	result = gtk_dialog_run (GTK_DIALOG (dialog));

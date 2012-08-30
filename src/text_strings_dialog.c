@@ -187,6 +187,7 @@ on_highlight_add_button_clicked (GtkButton *button, gpointer user_data)
 {
         GSList *list;
         int id;
+	GdkRGBA *default_highlight;
 
         debug ("called on_highlight_add_button_clicked\n");
 
@@ -201,13 +202,15 @@ on_highlight_add_button_clicked (GtkButton *button, gpointer user_data)
         }
 
         /* set the properties of the highlight */
+	default_highlight = g_new (GdkRGBA, 1);
+	gdk_rgba_parse (default_highlight, "yellow");
         preferences_set_string (preferences_get_highlight_key (id,
                                 PREF_HIGHLIGHT_STRING), "");
         preferences_set_bool (preferences_get_highlight_key (id,
                                 PREF_HIGHLIGHT_CASE_SENSITIVE), FALSE);
         preferences_set_color (preferences_get_highlight_match_key (id, 0,
                                 PREF_HIGHLIGHT_MATCH_TEXT_COLOR),
-                        gdk_color_from_string ("yellow"));
+			default_highlight);
 
         /* add the highlight to the list */
         list = g_slist_append (list, GINT_TO_POINTER (id));
@@ -424,13 +427,12 @@ cell_toggled (GtkCellRendererToggle *cellrenderertoggle, gchar *arg1,
 static void
 change_color (WarlockColorButton *button, char *key)
 {
-        GdkColor *color;
+        GdkRGBA *color;
 
         color = warlock_color_button_get_color (button);
         preferences_set_color (key, color);
-        if (color != NULL) {
-                gdk_color_free (color);
-        }
+        if (color != NULL)
+                gdk_rgba_free (color);
 }
 
 /* change the gconf font */
@@ -544,7 +546,7 @@ static void
 changed_color (const char *key, gpointer user_data)
 {
         GtkWidget *button;
-        GdkColor *color;
+        GdkRGBA *color;
 
         debug ("called changed_color\n");
 
@@ -552,9 +554,8 @@ changed_color (const char *key, gpointer user_data)
         color = preferences_get_color (key);
 
         warlock_color_button_set_color (WARLOCK_COLOR_BUTTON (button), color);
-        if (color != NULL) {
-                g_free (color);
-        }
+        if (color != NULL)
+                gdk_rgba_free (color);
 }
 
 /* handle when the font changes through gconf */
@@ -673,7 +674,7 @@ rebuild_list (void)
 static void
 set_color_button_properties (const char *key, GtkWidget *button)
 {
-        GdkColor *color;
+        GdkRGBA *color;
 
         /* disconnect any old signal handlers */
         g_signal_handlers_disconnect_matched (button,
@@ -681,18 +682,16 @@ set_color_button_properties (const char *key, GtkWidget *button)
                         G_CALLBACK (change_color), NULL);
 
         /* if we have a key, for the color, otherwise, NULL */
-        if (key != NULL) {
+        if (key != NULL)
                 color = preferences_get_color (key);
-        } else {
+        else
                 color = NULL;
-        }
 
         /* set and free the color */
         warlock_color_button_set_color (WARLOCK_COLOR_BUTTON (button), color);
 
-        if (color != NULL) {
-                g_free (color);
-        }
+        if (color != NULL)
+                gdk_rgba_free (color);
 
         /* if we have a key, connect the signals, otherwise, there is
          * no highlight and we don't need to */

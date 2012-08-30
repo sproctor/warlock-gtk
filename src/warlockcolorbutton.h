@@ -41,7 +41,7 @@ struct _WarlockColorButton {
         GtkHBox         box;
 
         gboolean        active;
-        GdkColor*       color;
+        GdkRGBA*	color;
         GtkWidget*      color_button;
         GtkWidget*      check_button;
 };
@@ -55,8 +55,8 @@ struct _WarlockColorButtonClass {
 GType           warlock_color_button_get_type   (void);
 GtkWidget*      warlock_color_button_new        (void);
 void            warlock_color_button_set_color  (WarlockColorButton *button,
-                const GdkColor *color);
-GdkColor*       warlock_color_button_get_color  (WarlockColorButton *button);
+                const GdkRGBA *color);
+GdkRGBA*       warlock_color_button_get_color  (WarlockColorButton *button);
 void            warlock_color_button_set_active (WarlockColorButton *button,
                 gboolean active);
 gboolean        warlock_color_button_get_active (WarlockColorButton *button);

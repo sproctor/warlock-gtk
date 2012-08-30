@@ -37,7 +37,7 @@ enum {
 static void warlock_color_button_class_init (WarlockColorButtonClass *klass);
 static void warlock_color_button_init (WarlockColorButton *button);
 static void warlock_color_button_set_color_real (WarlockColorButton *button,
-                const GdkColor *color);
+                const GdkRGBA *color);
 
 /* local variables */
 static guint warlock_color_button_signals[LAST_SIGNAL] = { 0 };
@@ -82,7 +82,7 @@ warlock_color_button_new (void)
 
 void
 warlock_color_button_set_color (WarlockColorButton *button,
-                const GdkColor *color)
+                const GdkRGBA *color)
 {
         if (color != NULL) {
                 warlock_color_button_set_active (button, TRUE);
@@ -92,14 +92,13 @@ warlock_color_button_set_color (WarlockColorButton *button,
         }
 }
 
-GdkColor*
+GdkRGBA*
 warlock_color_button_get_color (WarlockColorButton *button)
 {
-        if (button->active) {
-                return gdk_color_copy (button->color);
-        } else {
+        if (button->active)
+                return gdk_rgba_copy (button->color);
+        else
                 return NULL;
-        }
 }
 
 void
@@ -118,12 +117,12 @@ warlock_color_button_set_active (WarlockColorButton *button, gboolean active)
                                 (button->check_button), G_SIGNAL_MATCH_DATA,
                                 0, 0, NULL, NULL, button);
         } else {
-                GdkColor color;
+                GdkRGBA color;
 
                 button->active = FALSE;
                 gtk_widget_set_sensitive (button->color_button, FALSE);
 
-                gdk_color_parse ("black", &color);
+                gdk_rgba_parse (&color, "black");
                 warlock_color_button_set_color_real (button, &color);
 
                 g_signal_handlers_block_matched (G_OBJECT
@@ -150,9 +149,9 @@ static void
 warlock_color_button_color_changed (GtkColorButton *colorbutton,
                 WarlockColorButton *button)
 {
-        GdkColor color;
+        GdkRGBA color;
 
-        gtk_color_button_get_color (colorbutton, &color);
+        gtk_color_button_get_rgba (colorbutton, &color);
         warlock_color_button_set_color (button, &color);
 
         g_signal_emit (G_OBJECT (button),
@@ -195,7 +194,7 @@ warlock_color_button_init (WarlockColorButton *button)
         button->check_button = gtk_check_button_new ();
         button->color_button = gtk_color_button_new ();
         button->active = FALSE;
-        button->color = g_new (GdkColor, 1);
+        button->color = g_new (GdkRGBA, 1);
 
         gtk_box_pack_start (GTK_BOX (button), button->check_button, FALSE,
                         TRUE, 0);
@@ -216,14 +215,14 @@ warlock_color_button_init (WarlockColorButton *button)
 
 static void
 warlock_color_button_set_color_real (WarlockColorButton *button,
-                const GdkColor *color)
+                const GdkRGBA *color)
 {
         g_assert (color != NULL);
 
-        memcpy (button->color, color, sizeof (GdkColor));
+        memcpy (button->color, color, sizeof (GdkRGBA));
         g_signal_handlers_block_matched (G_OBJECT (button->color_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);
-        gtk_color_button_set_color (GTK_COLOR_BUTTON (button->color_button),
+        gtk_color_button_set_rgba (GTK_COLOR_BUTTON (button->color_button),
                         color);
         g_signal_handlers_unblock_matched (G_OBJECT (button->color_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);

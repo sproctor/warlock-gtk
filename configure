@@ -4171,7 +4171,7 @@ fi
 done
 
 
-pkg_modules="gtk+-2.0 >= 2.24 gthread-2.0 gconf-2.0"
+pkg_modules="gtk+-3.0 gconf-2.0"
 
 
 
@@ -4982,19 +4982,20 @@ fi
 done
 
 
+CFLAGS="$CFLAGS -DGSEAL_ENABLE"
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 
 $as_echo "#define DEBUG 1" >>confdefs.h
 
-	CFLAGS="-g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
+	CFLAGS="$CFLAGS -g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
 	if $our_gcc -v --help 2>/dev/null | grep pointer-sign >/dev/null; then
-		CFLAGS+=" -Wno-pointer-sign"
+		CFLAGS="$CFLAGS -Wno-pointer-sign"
 	fi
 
 $as_echo "#define GTK_DISABLE_DEPRECATED 1" >>confdefs.h
 
 else
-	CFLAGS="-O2"
+	CFLAGS="$CFLAGS -O2"
 fi
 
 ac_config_files="$ac_config_files Makefile src/Makefile"

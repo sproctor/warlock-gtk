@@ -350,7 +350,7 @@ static void load_profile (SgeState state, gpointer user_data)
                 table_pos++;
         }
 
-        button_box = gtk_hbox_new (FALSE, 6);
+        button_box = gtk_box_new (FALSE, 6);
         prev_button = NULL;
 
         switch (state) {

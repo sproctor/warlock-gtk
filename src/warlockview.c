@@ -68,22 +68,23 @@ static void
 change_text_color (const char *key, gpointer user_data)
 {
         GtkWidget *text_view;
-        GdkColor *color;
+        GdkRGBA *color;
 
         text_view = user_data;
         color = preferences_get_color (key);
-	gtk_widget_modify_text (text_view, GTK_STATE_NORMAL, color);
+	gtk_widget_override_color (text_view, GTK_STATE_NORMAL, color);
 }
 
 static void
 change_base_color (const char *key, gpointer user_data)
 {
         GtkWidget *text_view;
-        GdkColor *color;
+        GdkRGBA *color;
 
         text_view = user_data;
         color = preferences_get_color (key);
-	gtk_widget_modify_base (text_view, GTK_STATE_NORMAL, color);
+	gtk_widget_override_background_color (text_view, GTK_STATE_NORMAL,
+			color);
 }
 
 static void
@@ -94,14 +95,14 @@ change_font (const char *key, gpointer user_data)
 
         text_view = user_data;
 	font = preferences_get_font (key);
-	gtk_widget_modify_font (text_view, font);
+	gtk_widget_override_font (text_view, font);
 }
 
 static void
 warlock_view_create_text_view (WarlockView *warlock_view)
 {
         PangoFontDescription *font;
-        GdkColor *color;
+        GdkRGBA *color;
         GtkTextIter iter;
 	GtkWidget *text_view;
         
@@ -126,20 +127,21 @@ warlock_view_create_text_view (WarlockView *warlock_view)
         color = preferences_get_color (preferences_get_key
                         (PREF_DEFAULT_TEXT_COLOR));
         if (color == NULL) {
-                color = g_new (GdkColor, 1);
-                gdk_color_parse ("white", color);
+                color = g_new (GdkRGBA, 1);
+                gdk_rgba_parse (color, "white");
         }
-	gtk_widget_modify_text (text_view, GTK_STATE_NORMAL, color);
+	gtk_widget_override_color (text_view, GTK_STATE_NORMAL, color);
         g_free (color);
 
         /* set the background color*/
         color = preferences_get_color (preferences_get_key
                         (PREF_DEFAULT_BASE_COLOR));
         if (color == NULL) {
-                color = g_new (GdkColor, 1);
-                gdk_color_parse ("black", color);
+                color = g_new (GdkRGBA, 1);
+                gdk_rgba_parse (color, "black");
         }
-	gtk_widget_modify_base (text_view, GTK_STATE_NORMAL, color);
+	gtk_widget_override_background_color (text_view, GTK_STATE_NORMAL,
+			color);
         g_free (color);
 
         /* set the font */
@@ -147,7 +149,7 @@ warlock_view_create_text_view (WarlockView *warlock_view)
         if (font == NULL) {
                 font = pango_font_description_from_string ("sans");
         }
-	gtk_widget_modify_font (text_view, font);
+	gtk_widget_override_font (text_view, font);
 
         /* listen to gconf and change the text color when the gconf
          * value changes */

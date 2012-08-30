@@ -116,13 +116,12 @@ static void compass_init_item (GtkWidget *compass_table, guint x, guint y)
 
 void compass_init (GtkWidget *compass_table)
 {
-        guint16 x, y;
-        guint16 cols, rows;
+        guint x, y;
+        guint cols, rows;
 
         g_assert (compass_table != NULL);
 
-        cols = (GTK_TABLE (compass_table))->ncols;
-        rows = (GTK_TABLE (compass_table))->nrows;
+	gtk_table_get_size (GTK_TABLE (compass_table), &rows, &cols);
 
         for (y = 0; y < rows; y++)
                 for (x = 0; x < cols; x++)

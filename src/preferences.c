@@ -430,24 +430,30 @@ GSList *preferences_get_list (const char *key, PreferencesValue val)
         return list;
 }
 
-void preferences_set_color (const char *key, const GdkColor *color)
+void preferences_set_color (const char *key, const GdkRGBA *color)
 {
         char *str;
 
-        str = gdk_color_to_string (color);
+        str = gdk_rgba_to_string (color);
         preferences_set_string (key, str);
-        if (str != NULL) {
+        if (str != NULL)
                 g_free (str);
-        }
 }
 
-GdkColor *preferences_get_color (const char *key)
+GdkRGBA *preferences_get_color (const char *key)
 {
         char *str;
+	GdkRGBA *rgba;
 
         str = preferences_get_string (key);
+	if (str == NULL)
+		return NULL;
 
-        return gdk_color_from_string (str);
+	rgba = g_new (GdkRGBA, 1);
+        if (gdk_rgba_parse (rgba, str))
+		return rgba;
+
+	return NULL;
 }
 
 void preferences_set_font (const char *key, const PangoFontDescription *font)

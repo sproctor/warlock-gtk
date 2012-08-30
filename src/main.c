@@ -218,7 +218,7 @@ on_main_window_key_press_event         (GtkWidget       *widget,
         gboolean result;
 
         switch (event->keyval) {
-                case GDK_Escape: /* Stop currently running script */
+                case GDK_KEY_Escape: /* Stop currently running script */
                         if (event->state & GDK_SHIFT_MASK) {
                                 script_toggle_suspend ();
                         } else {
@@ -226,15 +226,15 @@ on_main_window_key_press_event         (GtkWidget       *widget,
                         }
                         return TRUE;
 
-                case GDK_Page_Up:
-                case GDK_Page_Down:
+                case GDK_KEY_Page_Up:
+                case GDK_KEY_Page_Down:
                         //gtk_widget_grab_focus (main_window->scroller);
                         g_signal_emit_by_name (warlock_view_get_scrolled_window
 					("main"), "key_press_event", event,
 					&result);
                         return result;
 
-                case GDK_KP_Enter :	/* send last command entered */
+                case GDK_KEY_KP_Enter :	/* send last command entered */
                         warlock_entry_grab_focus ();
                         if (strcmp (warlock_entry_get_text (), "") != 0) {
                                 warlock_entry_give_key_event (event);
@@ -244,7 +244,7 @@ on_main_window_key_press_event         (GtkWidget       *widget,
                         warlock_history_last ();
                         return TRUE;
 
-                case GDK_Return:
+                case GDK_KEY_Return:
                         if (event->state & (GDK_MOD1_MASK | GDK_SHIFT_MASK
                                                 | GDK_CONTROL_MASK)) {
                                 warlock_entry_grab_focus ();
@@ -259,12 +259,12 @@ on_main_window_key_press_event         (GtkWidget       *widget,
                         warlock_entry_give_key_event (event);
                         return TRUE;
 
-                case GDK_Up :		/* move back in the command history */
+                case GDK_KEY_Up :		/* move back in the command history */
                         warlock_entry_grab_focus ();
                         warlock_history_prev ();
                         return TRUE;
 
-                case GDK_Down :		/* move forward in command history */
+                case GDK_KEY_Down :		/* move forward in command history */
                         warlock_entry_grab_focus ();
                         warlock_history_next ();
                         return TRUE;
@@ -349,12 +349,12 @@ on_main_window_key_press_default_event (GtkWidget *widget, GdkEventKey *event,
                 gpointer user_data)
 {
         if (warlock_entry_is_focus () ||
-                        event->keyval == GDK_Alt_R ||
-                        event->keyval == GDK_Alt_L ||
-                        event->keyval == GDK_Control_R ||
-                        event->keyval == GDK_Control_L ||
-                        event->keyval == GDK_Shift_R ||
-                        event->keyval == GDK_Shift_L) {
+                        event->keyval == GDK_KEY_Alt_R ||
+                        event->keyval == GDK_KEY_Alt_L ||
+                        event->keyval == GDK_KEY_Control_R ||
+                        event->keyval == GDK_KEY_Control_L ||
+                        event->keyval == GDK_KEY_Shift_R ||
+                        event->keyval == GDK_KEY_Shift_L) {
                 return FALSE;
         }
 

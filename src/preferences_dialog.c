@@ -167,7 +167,7 @@ init_file (char *name, Preference pref)
 static void
 on_color_button_color_set (WarlockColorButton *widget, gpointer user_data)
 {
-        GdkColor *color;
+        GdkRGBA *color;
         char *key;
 	Preference pref;
 
@@ -178,9 +178,8 @@ on_color_button_color_set (WarlockColorButton *widget, gpointer user_data)
         key = preferences_get_key (pref);
         preferences_set_color (key, color);
         g_free (key);
-        if (color != NULL) {
-                gdk_color_free (color);
-        }
+        if (color != NULL)
+                gdk_rgba_free (color);
 }
 
 static void
@@ -203,7 +202,7 @@ init_color (char *name, Preference pref)
 {
         GtkWidget *widget;
         char *key;
-        GdkColor *color;
+        GdkRGBA *color;
         GtkWidget *box;
 
         box = warlock_get_widget (name);

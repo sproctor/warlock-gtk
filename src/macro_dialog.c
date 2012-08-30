@@ -247,12 +247,12 @@ static gboolean grab_keys (GtkWidget *widget, GdkEventKey *event,
         char *command;
 
         switch (event->keyval) {
-                case GDK_Control_R:
-                case GDK_Control_L:
-                case GDK_Alt_R:
-                case GDK_Alt_L:
-                case GDK_Shift_L:
-                case GDK_Shift_R:
+                case GDK_KEY_Control_R:
+                case GDK_KEY_Control_L:
+                case GDK_KEY_Alt_R:
+                case GDK_KEY_Alt_L:
+                case GDK_KEY_Shift_L:
+                case GDK_KEY_Shift_R:
                         return FALSE;
         }
 
@@ -304,7 +304,8 @@ static void create_macro_grab_dialog (char *key)
         label = gtk_label_new (_("Press a key combination that you would like "
                                 "associated with a command."));
         gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-        gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), label);
+        gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area
+				(GTK_DIALOG (dialog))), label);
         gtk_widget_show_all (dialog);
 
         gtk_dialog_run (GTK_DIALOG (dialog));

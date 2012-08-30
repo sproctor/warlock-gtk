@@ -104,8 +104,8 @@ void preferences_set_string (const char *key, const char *string);
 char *preferences_get_string (const char *key);
 void preferences_set_list (const char *key, PreferencesValue val, GSList *list);
 GSList *preferences_get_list (const char *key, PreferencesValue val);
-void preferences_set_color (const char *key, const GdkColor *color);
-GdkColor *preferences_get_color (const char *key);
+void preferences_set_color (const char *key, const GdkRGBA *color);
+GdkRGBA *preferences_get_color (const char *key);
 void preferences_set_font (const char *key, const PangoFontDescription *font);
 PangoFontDescription *preferences_get_font (const char *key);
 
