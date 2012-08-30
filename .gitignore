@@ -1,5 +1,6 @@
 # Compiled files
 *.o
+src/warlock
 
 # Build files
 Makefile
