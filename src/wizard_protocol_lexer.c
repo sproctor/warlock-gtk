@@ -2041,7 +2041,7 @@ void wizardfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 99 "wizard_protocol_lexer.l"
+#line 98 "wizard_protocol_lexer.l"
 
 
 static char *
