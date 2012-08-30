@@ -2813,16 +2813,6 @@ esac
 $as_echo "$warlock_native_win32" >&6; }
 
 
-if test x"$warlock_native_win32" = "xyes"; then
-
-$as_echo "#define XP_WIN /**/" >>confdefs.h
-
-else
-
-$as_echo "#define XP_UNIX /**/" >>confdefs.h
-
-fi
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'

@@ -102,12 +102,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* JS system type */
-#undef XP_UNIX
-
-/* JS System type */
-#undef XP_WIN
-
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER
