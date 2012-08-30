@@ -362,8 +362,8 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	} else {
 		warlock_view->widget = glade_xml_get_widget (warlock_xml,
 				"main_window_frame");
-		// view_show (warlock_view);
 		shown = TRUE;
+		main_view = warlock_view;
 	}
 	warlock_view->gconf_key = key;
 
