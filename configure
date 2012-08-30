@@ -4951,7 +4951,7 @@ $as_echo "no way" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: produced libraries might be incompatible with MSVC-compiled code" >&5
 $as_echo "$as_me: WARNING: produced libraries might be incompatible with MSVC-compiled code" >&2;}
 	else
-	CFLAGS="$CFLAGS $msnative_struct"
+	MSCFLAGS="$msnative_struct"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${msnative_struct}" >&5
 $as_echo "${msnative_struct}" >&6; }
 	fi
@@ -4972,21 +4972,22 @@ fi
 done
 
 
-CFLAGS="$CFLAGS -DGSEAL_ENABLE"
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 
 $as_echo "#define DEBUG 1" >>confdefs.h
 
-	CFLAGS="$CFLAGS -g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
-	if $our_gcc -v --help 2>/dev/null | grep pointer-sign >/dev/null; then
-		CFLAGS="$CFLAGS -Wno-pointer-sign"
-	fi
+	CFLAGS="-g -Wall -Wstrict-aliasing -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
 
 $as_echo "#define GTK_DISABLE_DEPRECATED 1" >>confdefs.h
 
+
+$as_echo "#define GDK_DISABLE_DEPRECATED 1" >>confdefs.h
+
 else
-	CFLAGS="$CFLAGS -O2"
+	CFLAGS="-O"
 fi
+
+CFLAGS+=$MSCFLAGS
 
 ac_config_files="$ac_config_files Makefile src/Makefile"
 

@@ -51,7 +51,7 @@ SimuConnection *simu_connection_init (const char *server, int port,
                 SimuInitFunc init_func, gpointer init_data,
                 SimuLineHandler line_handler, gpointer input_data,
                 SimuQuitHandler quit_handler, gpointer hup_data);
-int simu_connection_send (SimuConnection *conn, char *to_send);
+gsize simu_connection_send (SimuConnection *conn, char *to_send);
 void simu_connection_shutdown (SimuConnection *conn);
 
 #endif

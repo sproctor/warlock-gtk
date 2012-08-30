@@ -3,7 +3,10 @@
 /* enable debugging */
 #undef DEBUG
 
-/* disable deprecated gtk functions */
+/* disable deprecated GDK functions */
+#undef GDK_DISABLE_DEPRECATED
+
+/* disable deprecated GTK functions */
 #undef GTK_DISABLE_DEPRECATED
 
 /* Define to 1 if you have the <ctype.h> header file. */

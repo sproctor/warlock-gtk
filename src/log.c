@@ -53,7 +53,7 @@ save_log (const char *filename)
 {
 	GIOChannel *file;
 	GError *err;
-	gssize size;
+	gsize size;
 	char *history;
 
 	err = NULL;
@@ -68,7 +68,7 @@ save_log (const char *filename)
 	history = warlock_view_get_text (NULL);
 
 	(void)g_io_channel_write_chars (file, history, -1, &size, &err);
-	debug ("%" G_GSSIZE_FORMAT " characters written to file\n", size);
+	debug ("%" G_GSIZE_FORMAT " characters written to file\n", size);
 	print_error (err);
 
 	g_free (history);

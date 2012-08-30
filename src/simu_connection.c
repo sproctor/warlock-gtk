@@ -39,10 +39,10 @@
 #include "simu_connection.h"
 #include "debug.h"
 
-int
+gsize
 simu_connection_send (SimuConnection *conn, char *to_send)
 {
-        gssize written = 0; 
+        gsize written = 0; 
         GIOStatus status;
         GError *err;
 
@@ -56,7 +56,7 @@ simu_connection_send (SimuConnection *conn, char *to_send)
         status = g_io_channel_write_chars (conn->channel, to_send, -1, &written,
                         &err);
 
-        debug ("%" G_GSSIZE_FORMAT " bytes written\n", written);
+        debug ("%" G_GSIZE_FORMAT " bytes written\n", written);
 
         switch (status) {
                 case G_IO_STATUS_NORMAL:

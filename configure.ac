@@ -138,7 +138,7 @@ if test x"$GCC" = xyes; then
 	AC_MSG_RESULT([no way])
 AC_MSG_WARN([produced libraries might be incompatible with MSVC-compiled code])
 	else
-	CFLAGS="$CFLAGS $msnative_struct"
+	MSCFLAGS="$msnative_struct"
 AC_MSG_RESULT([${msnative_struct}])
 	fi
 
@@ -151,16 +151,15 @@ AC_CHECK_FUNCS([gethostbyname memset socket strstr])
 dnl Options
 dnl This breaks windows... so before we try to port to windows, make sure
 dnl we don't sack the CFLAGS, or change the line above
-CFLAGS="$CFLAGS -DGSEAL_ENABLE"
 if test x"$USE_MAINTAINER_MODE" = "xyes"; then
 	AC_DEFINE(DEBUG, 1, [enable debugging])
-	CFLAGS="$CFLAGS -g -Wall -Wstrict-aliasing=2 -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
-	if $our_gcc -v --help 2>/dev/null | grep pointer-sign >/dev/null; then
-		CFLAGS="$CFLAGS -Wno-pointer-sign"
-	fi
-	AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated gtk functions])
+	CFLAGS="-g -Wall -Wstrict-aliasing -Wnested-externs -Wold-style-definition -Wdeclaration-after-statement -O0 -Werror"
+	AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [disable deprecated GTK functions])
+	AC_DEFINE(GDK_DISABLE_DEPRECATED, 1, [disable deprecated GDK functions])
 else
-	CFLAGS="$CFLAGS -O2"
+	CFLAGS="-O"
 fi
+
+CFLAGS+=$MSCFLAGS
 
 AC_OUTPUT(Makefile src/Makefile)
