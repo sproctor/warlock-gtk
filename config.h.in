@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if you want: SpiderMonkey support */
-#undef CONFIG_SPIDERMONKEY
-
 /* enable debugging */
 #undef DEBUG
 

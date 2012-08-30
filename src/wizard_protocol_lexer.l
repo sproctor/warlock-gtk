@@ -39,10 +39,6 @@
 #include "script.h"
 #include "simu_connection.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 /* external global variables */
 extern SimuConnection *connection;
 extern GladeXML *warlock_xml;
@@ -239,9 +235,6 @@ handle_command (char command, char *params)
 			  // TODO setup hooks for these so we don't have this
 			  //      kind of code in this file
 			script_moved ();
-#ifdef CONFIG_SPIDERMONKEY
-			js_script_moved ();
-#endif
 			room_title = TRUE;
 			break;
 		case 'p': // marks then end of the room description

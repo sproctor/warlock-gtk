@@ -46,10 +46,6 @@
 #include "script.h"
 #include "log.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 #ifndef VERSION
 #  error "No version specified"
 #endif
@@ -148,12 +144,6 @@ void warlock_init (void)
         warlock_views_init ();
 	warlock_log_init ();
         script_init ();
-
-#ifdef CONFIG_SPIDERMONKEY
-        if (!js_script_init ()) {
-                g_error ("Error initializing javascript runtime");
-        }
-#endif
 }
 
 static void

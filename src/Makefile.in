@@ -52,20 +52,6 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgdatadir)" \
 	"$(DESTDIR)$(schemadir)"
 PROGRAMS = $(bin_PROGRAMS)
-am__warlock_SOURCES_DIST = compass.c compass.h debug.h entry.c entry.h \
-	hand.c hand.h helpers.c helpers.h highlight.c highlight.h \
-	log.c log.h macro.c macro.h macro_dialog.c macro_dialog.h \
-	main.c preferences.c preferences.h preferences_dialog.c \
-	preferences_dialog.h profile_dialog.c profile_dialog.h \
-	script.c script.h script_lexer.l script_parser.y \
-	sge_connection.c sge_connection.h simu_connection.c \
-	simu_connection.h status.c status.h text_strings_dialog.c \
-	text_strings_dialog.h warlock.c warlock.h warlockcolorbutton.c \
-	warlockcolorbutton.h warlockfontbutton.c warlockfontbutton.h \
-	warlockstring.c warlockstring.h warlocktime.c warlocktime.h \
-	warlockview.c warlockview.h wizard_protocol_lexer.l jsscript.c \
-	jsscript.h
-@SPIDERMONKEY_TRUE@am__objects_1 = jsscript.$(OBJEXT)
 am_warlock_OBJECTS = compass.$(OBJEXT) entry.$(OBJEXT) hand.$(OBJEXT) \
 	helpers.$(OBJEXT) highlight.$(OBJEXT) log.$(OBJEXT) \
 	macro.$(OBJEXT) macro_dialog.$(OBJEXT) main.$(OBJEXT) \
@@ -77,7 +63,7 @@ am_warlock_OBJECTS = compass.$(OBJEXT) entry.$(OBJEXT) hand.$(OBJEXT) \
 	warlock.$(OBJEXT) warlockcolorbutton.$(OBJEXT) \
 	warlockfontbutton.$(OBJEXT) warlockstring.$(OBJEXT) \
 	warlocktime.$(OBJEXT) warlockview.$(OBJEXT) \
-	wizard_protocol_lexer.$(OBJEXT) $(am__objects_1)
+	wizard_protocol_lexer.$(OBJEXT)
 warlock_OBJECTS = $(am_warlock_OBJECTS)
 warlock_DEPENDENCIES =
 warlock_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(warlock_LDFLAGS) \
@@ -96,7 +82,7 @@ YLWRAP = $(top_srcdir)/ylwrap
 @MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
 YACCCOMPILE = $(YACC) $(AM_YFLAGS) $(YFLAGS)
 SOURCES = $(warlock_SOURCES)
-DIST_SOURCES = $(am__warlock_SOURCES_DIST)
+DIST_SOURCES = $(warlock_SOURCES)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -187,8 +173,6 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SPIDERMONKEY_CFLAGS = @SPIDERMONKEY_CFLAGS@
-SPIDERMONKEY_LIBS = @SPIDERMONKEY_LIBS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 WARLOCK_LIBS_EXTRA = @WARLOCK_LIBS_EXTRA@
@@ -254,10 +238,6 @@ dist_pkgdata_DATA = warlock.glade
 schemadir = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = warlock.schemas
 EXTRA_DIST = $(schema_DATA)
-@SPIDERMONKEY_TRUE@jssources = \
-@SPIDERMONKEY_TRUE@	jsscript.c \
-@SPIDERMONKEY_TRUE@	jsscript.h
-
 warlock_SOURCES = \
 	compass.c \
 	compass.h \
@@ -307,8 +287,7 @@ warlock_SOURCES = \
 	warlocktime.h \
 	warlockview.c \
 	warlockview.h \
-	wizard_protocol_lexer.l \
-	$(jssources)
+	wizard_protocol_lexer.l
 
 warlock_LDADD = @PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
 warlock_LDFLAGS = -rdynamic
@@ -406,7 +385,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/highlight.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsscript.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/macro.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/macro_dialog.Po@am__quote@

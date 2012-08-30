@@ -36,10 +36,6 @@
 #include "warlockview.h"
 #include "macro.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 extern SimuConnection *connection;
 
 GladeXML *warlock_xml = NULL;
@@ -223,14 +219,8 @@ on_main_window_key_press_event         (GtkWidget       *widget,
                 case GDK_Escape: /* Stop currently running script */
                         if (event->state & GDK_SHIFT_MASK) {
                                 script_toggle_suspend ();
-#ifdef CONFIG_SPIDERMONKEY
-                                js_script_toggle_all ();
-#endif
                         } else {
                                 script_kill ();
-#ifdef CONFIG_SPIDERMONKEY
-                                js_script_stop_all ();
-#endif
                         }
                         return TRUE;
 

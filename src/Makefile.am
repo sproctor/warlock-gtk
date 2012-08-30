@@ -13,12 +13,6 @@ schema_DATA = warlock.schemas
 
 EXTRA_DIST = $(schema_DATA)
 
-if SPIDERMONKEY
-jssources = \
-	jsscript.c \
-	jsscript.h
-endif
-
 warlock_SOURCES = \
 	compass.c \
 	compass.h \
@@ -68,8 +62,7 @@ warlock_SOURCES = \
 	warlocktime.h \
 	warlockview.c \
 	warlockview.h \
-	wizard_protocol_lexer.l \
-	$(jssources)
+	wizard_protocol_lexer.l
 
 warlock_LDADD = @PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
 warlock_LDFLAGS = -rdynamic

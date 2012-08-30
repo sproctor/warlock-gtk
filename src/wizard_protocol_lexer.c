@@ -708,10 +708,6 @@ char *wizardtext;
 #include "script.h"
 #include "simu_connection.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 /* external global variables */
 extern SimuConnection *connection;
 extern GladeXML *warlock_xml;
@@ -735,7 +731,7 @@ static char *parse_hand (char *str);
 static void unhandled_character (void);
 #define YY_NO_INPUT 1
 
-#line 739 "wizard_protocol_lexer.c"
+#line 735 "wizard_protocol_lexer.c"
 
 #define INITIAL 0
 #define COMMAND 1
@@ -922,9 +918,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 75 "wizard_protocol_lexer.l"
+#line 71 "wizard_protocol_lexer.l"
 
-#line 928 "wizard_protocol_lexer.c"
+#line 924 "wizard_protocol_lexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -1009,12 +1005,12 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 76 "wizard_protocol_lexer.l"
+#line 72 "wizard_protocol_lexer.l"
 BEGIN (COMMAND);
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 77 "wizard_protocol_lexer.l"
+#line 73 "wizard_protocol_lexer.l"
 {
 	char *tmp;
 	tmp = lexer_string ();
@@ -1027,7 +1023,7 @@ YY_RULE_SETUP
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 85 "wizard_protocol_lexer.l"
+#line 81 "wizard_protocol_lexer.l"
 {
 	char *params;
 	params = lexer_string ();
@@ -1038,51 +1034,51 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 92 "wizard_protocol_lexer.l"
+#line 88 "wizard_protocol_lexer.l"
 {
 	highlighting = TRUE;
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 95 "wizard_protocol_lexer.l"
+#line 91 "wizard_protocol_lexer.l"
 {
 	highlighting = FALSE;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 98 "wizard_protocol_lexer.l"
+#line 94 "wizard_protocol_lexer.l"
 warlock_bell ();
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 99 "wizard_protocol_lexer.l"
+#line 95 "wizard_protocol_lexer.l"
 arrival_string();
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 100 "wizard_protocol_lexer.l"
+#line 96 "wizard_protocol_lexer.l"
 output_string ();
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 101 "wizard_protocol_lexer.l"
+#line 97 "wizard_protocol_lexer.l"
 eol_code ();
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 102 "wizard_protocol_lexer.l"
+#line 98 "wizard_protocol_lexer.l"
 unhandled_character();
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 103 "wizard_protocol_lexer.l"
+#line 99 "wizard_protocol_lexer.l"
 ECHO;
 	YY_BREAK
-#line 1086 "wizard_protocol_lexer.c"
+#line 1082 "wizard_protocol_lexer.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMAND):
 case YY_STATE_EOF(PARAMS):
@@ -2045,7 +2041,7 @@ void wizardfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 103 "wizard_protocol_lexer.l"
+#line 99 "wizard_protocol_lexer.l"
 
 
 static char *
@@ -2186,9 +2182,6 @@ handle_command (char command, char *params)
 			  // TODO setup hooks for these so we don't have this
 			  //      kind of code in this file
 			script_moved ();
-#ifdef CONFIG_SPIDERMONKEY
-			js_script_moved ();
-#endif
 			room_title = TRUE;
 			break;
 		case 'p': // marks then end of the room description

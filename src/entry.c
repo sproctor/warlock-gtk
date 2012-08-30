@@ -38,10 +38,6 @@
 #include "status.h"
 #include "warlockview.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 static void
 script_command (int argc, const char **argv);
 
@@ -364,9 +360,6 @@ script_command (int argc, const char **argv)
 				const char **argv);
 	} suffixes[] = {
 		{"\\.[Cc][Mm][Dd]", script_load},
-#ifdef CONFIG_SPIDERMONKEY
-		{"\\.js", js_script_load},
-#endif
 		{NULL, NULL}
 	};
 

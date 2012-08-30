@@ -625,10 +625,6 @@ PKG_CONFIG
 PCRE_LIBS
 PCRE_CFLAGS
 PCRE_CONFIG
-SPIDERMONKEY_CFLAGS
-SPIDERMONKEY_LIBS
-SPIDERMONKEY_FALSE
-SPIDERMONKEY_TRUE
 YFLAGS
 YACC
 LEXLIB
@@ -729,7 +725,6 @@ ac_user_opts='
 enable_option_checking
 enable_maintainer_mode
 enable_dependency_tracking
-with_spidermonkey
 with_gconf_source
 with_gconf_schema_file_dir
 enable_schemas_install
@@ -1380,7 +1375,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --without-spidermonkey  disable SpiderMonkey Mozilla JavaScript engine support
   --with-gconf-source=sourceaddress
                           Config database for installing schema files.
   --with-gconf-schema-file-dir=dir
@@ -4078,110 +4072,6 @@ for Fedora)" "$LINENO" 5
 fi
 
 
-
-
-# Check whether --with-spidermonkey was given.
-if test "${with_spidermonkey+set}" = set; then :
-  withval=$with_spidermonkey; if test "$withval" = no; then withval=""; disable_spidermonkey=yes; fi
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SpiderMonkey" >&5
-$as_echo_n "checking for SpiderMonkey... " >&6; }
-
-if test "$withval" = yes; then withval=""; fi
-
-
-	CFLAGS_X="$CFLAGS";
-	CPPFLAGS_X="$CPPFLAGS";
-	LDFLAGS_X="$LDFLAGS";
-	LIBS_X="$LIBS";
-
-cf_result=no
-
-if test -z "$disable_spidermonkey"; then
-	if test ! -d "$withval"; then
-		withval="";
-	fi
-	for spidermonkeydir in "$withval" "" /usr /usr/local /opt/spidermonkey /opt/js; do
-		for spidermonkeyinclude in "/include" "/include/js" "/include/smjs"; do
-			for spidermonkeylib in js smjs; do
-				if test "$cf_result" = no; then
-					SPIDERMONKEY_LIBS="-l$spidermonkeylib"
-
-					if test ! -z "$spidermonkeydir"; then
-						SPIDERMONKEY_LIBS="-L$spidermonkeydir/lib $SPIDERMONKEY_LIBS"
-						SPIDERMONKEY_CFLAGS="-I$spidermonkeydir$spidermonkeyinclude"
-					fi
-
-					LIBS="$SPIDERMONKEY_LIBS $LIBS_X"
-					CFLAGS="$CFLAGS_X $SPIDERMONKEY_CFLAGS"
-					CPPFLAGS="$CPPFLAGS_X $SPIDERMONKEY_CFLAGS"
-
-					cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define XP_UNIX
-						     #include <jsapi.h>
-int
-main ()
-{
-JS_GetImplementationVersion()
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  cf_result=yes
-else
-  cf_result=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-				fi
-			done
-		done
-	done
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $cf_result" >&5
-$as_echo "$cf_result" >&6; }
-
-if test "$cf_result" != yes; then
-        if test -z "$disable_spidermonkey"; then
-                as_fn_error $? "\"You must install SpiderMonkey with \
---enable-thread-safe (libsmjs-dev for Debian, Fedora \
-and Gentoo will need to build the package from \
-http://www.mozilla.org/js/spidermonkey/ because the \
-versions that come with them are not thread-safe) or \
-configure with --without-spidermonkey\"" "$LINENO" 5
-        else
-
-	CFLAGS="$CFLAGS_X";
-	CPPFLAGS="$CPPFLAGS_X";
-	LDFLAGS="$LDFLAGS_X";
-	LIBS="$LIBS_X";
-
-        fi
-else
-
-	  CONFIG_SPIDERMONKEY=yes
-	  ABOUT_CONFIG_SPIDERMONKEY="SpiderMonkey"
-
-$as_echo "#define CONFIG_SPIDERMONKEY 1" >>confdefs.h
-
-fi
-
- if test "$CONFIG_SPIDERMONKEY" = "yes"; then
-  SPIDERMONKEY_TRUE=
-  SPIDERMONKEY_FALSE='#'
-else
-  SPIDERMONKEY_TRUE='#'
-  SPIDERMONKEY_FALSE=
-fi
-
-
-
-
-
 # Extract the first word of "pcre-config", so it can be a program name with args.
 set dummy pcre-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -5236,10 +5126,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${SPIDERMONKEY_TRUE}" && test -z "${SPIDERMONKEY_FALSE}"; then
-  as_fn_error $? "conditional \"SPIDERMONKEY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${GCONF_SCHEMAS_INSTALL_TRUE}" && test -z "${GCONF_SCHEMAS_INSTALL_FALSE}"; then

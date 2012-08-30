@@ -36,10 +36,6 @@
 #include "preferences.h"
 #include "log.h"
 
-#ifdef CONFIG_SPIDERMONKEY
-#include "jsscript.h"
-#endif
-
 typedef struct _WarlockView WarlockView;
 
 struct _WarlockView {
@@ -229,11 +225,6 @@ view_append (WarlockView *view, WString *string)
 
         // script stuff
         script_match_string (string->string->str);
-
-#ifdef CONFIG_SPIDERMONKEY
-	// JS script stuff
-	js_script_got_line (string->string->str);
-#endif
 
 	// log it
 	warlock_log (string->string->str);
@@ -494,9 +485,6 @@ do_prompt (void)
 {
         // FIXME figure out some way to abstract this function
         WString *string;
-#ifdef CONFIG_SPIDERMONKEY
-        char* js_prompt_string;
-#endif
 
 	script_got_prompt ();
 
@@ -515,14 +503,6 @@ do_prompt (void)
 		w_string_append_str (string, g_strdup_printf ("%d", script_get_linenum()));
 		w_string_append_str (string, "]");
         }
-
-#ifdef CONFIG_SPIDERMONKEY
-        js_prompt_string = js_script_get_prompt_string ();
-        if (js_prompt_string != NULL) {
-                w_string_append_str (string, js_prompt_string);
-                g_free (js_prompt_string);
-        }
-#endif
 
         w_string_append_c (string, '>');
 
