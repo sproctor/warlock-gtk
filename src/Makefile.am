@@ -3,7 +3,7 @@ INCLUDES = \
         -DPACKAGE_LOCALE_DIR=\"$(prefix)/$(DATADIRNAME)/locale\" \
         @PACKAGE_CFLAGS@ @PCRE_CFLAGS@
 
-BUILT_SOURCES	= script_parser.h
+BUILT_SOURCES	= script_parser.h script_lexer.h
 bin_PROGRAMS    = warlock
 
 dist_pkgdata_DATA = warlock.glade
@@ -69,7 +69,6 @@ warlock_SOURCES = \
 	warlockview.c \
 	warlockview.h \
 	wizard_protocol_lexer.l \
-	yacc_mangle.h \
 	$(jssources)
 
 warlock_LDADD = @PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
@@ -79,6 +78,9 @@ AM_YFLAGS	= -d
 AM_LFLAGS	= -olex.yy.c
 CLEANFILES      = *~
 DISTCLEANFILES  = .deps/*.P
+
+script_lexer.h:
+	$(LEX) script_lexer.l
 
 install-data-local:
 	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) \

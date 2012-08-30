@@ -25,12 +25,12 @@
 
 #include <glib.h>
 
-#define YACC_PREFIX script
-#include "yacc_mangle.h"
 #include "debug.h"
 #include "script.h"
+#include "script_parser.h"
+#include "script_lexer.h"
 
-extern int scriptlex (void);
+// extern int scriptlex (void);
 
 /* local functions */
 static int scripterror (ScriptCommand **command, const char **label,
@@ -38,6 +38,7 @@ static int scripterror (ScriptCommand **command, const char **label,
 
 /* local variables */
 %}
+%name-prefix "script"
 
 %union {
 	char			*string;

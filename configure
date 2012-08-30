@@ -3973,8 +3973,8 @@ fi
 if test "$LEX" = :; then
   LEX=${am_missing_run}flex
 fi
-if test "$LEX" != "flex"; then
-  LEX="$SHELL $missing_dir/missing flex"
+if test "x$LEX" != "xflex"; then
+  LEX="$SHELL $top_srcdir/missing flex"
   LEX_OUTPUT_ROOT=lex.yy
 
   LEXLIB=''

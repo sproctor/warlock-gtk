@@ -63,8 +63,8 @@ am__warlock_SOURCES_DIST = compass.c compass.h debug.h entry.c entry.h \
 	text_strings_dialog.h warlock.c warlock.h warlockcolorbutton.c \
 	warlockcolorbutton.h warlockfontbutton.c warlockfontbutton.h \
 	warlockstring.c warlockstring.h warlocktime.c warlocktime.h \
-	warlockview.c warlockview.h wizard_protocol_lexer.l \
-	yacc_mangle.h jsscript.c jsscript.h
+	warlockview.c warlockview.h wizard_protocol_lexer.l jsscript.c \
+	jsscript.h
 @SPIDERMONKEY_TRUE@am__objects_1 = jsscript.$(OBJEXT)
 am_warlock_OBJECTS = compass.$(OBJEXT) entry.$(OBJEXT) hand.$(OBJEXT) \
 	helpers.$(OBJEXT) highlight.$(OBJEXT) log.$(OBJEXT) \
@@ -249,7 +249,7 @@ INCLUDES = \
         -DPACKAGE_LOCALE_DIR=\"$(prefix)/$(DATADIRNAME)/locale\" \
         @PACKAGE_CFLAGS@ @PCRE_CFLAGS@
 
-BUILT_SOURCES = script_parser.h
+BUILT_SOURCES = script_parser.h script_lexer.h
 dist_pkgdata_DATA = warlock.glade
 schemadir = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = warlock.schemas
@@ -308,7 +308,6 @@ warlock_SOURCES = \
 	warlockview.c \
 	warlockview.h \
 	wizard_protocol_lexer.l \
-	yacc_mangle.h \
 	$(jssources)
 
 warlock_LDADD = @PACKAGE_LIBS@ @PCRE_LIBS@ @WARLOCK_LIBS_EXTRA@
@@ -702,6 +701,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_pkgdataDATA \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-dist_pkgdataDATA uninstall-schemaDATA
 
+
+script_lexer.h:
+	$(LEX) script_lexer.l
 
 install-data-local:
 	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) \

@@ -42,8 +42,8 @@ AC_PROG_CC
 dnl AC_PROG_LIBTOOL
 
 AM_PROG_LEX
-if test "$LEX" != "flex"; then
-  LEX="$SHELL $missing_dir/missing flex"
+if test "x$LEX" != "xflex"; then
+  LEX="$SHELL $top_srcdir/missing flex"
   AC_SUBST(LEX_OUTPUT_ROOT, lex.yy)
   AC_SUBST(LEXLIB, '')
 fi

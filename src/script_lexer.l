@@ -25,8 +25,6 @@
 
 #include "script.h"
 #include "debug.h"
-#define YACC_PREFIX script
-#include "yacc_mangle.h"
 #include "script_parser.h"
 
 #define lexer_string()		g_strndup (yytext, yyleng)
@@ -35,7 +33,7 @@ extern gboolean script_running;
 
 %}
 
-%option prefix="script" nounput case-insensitive stack noyy_top_state noyywrap
+%option prefix="script" header-file="script_lexer.h" nounput noinput case-insensitive stack noyy_top_state noyywrap
 %x VAR COMMENT IF IF_ QUOTE COMMAND
 
 %%
@@ -64,52 +62,52 @@ extern gboolean script_running;
 }
 <IF>(!=|<>)			{
 	debug ("script notequal\n");
-	yylval.compare_op = SCRIPT_OP_NOTEQUAL;
+	scriptlval.compare_op = SCRIPT_OP_NOTEQUAL;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>(=|==)			{
 	debug ("script equal\n");
-	yylval.compare_op = SCRIPT_OP_EQUAL;
+	scriptlval.compare_op = SCRIPT_OP_EQUAL;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>\>				{
 	debug ("script greater than\n");
-	yylval.compare_op = SCRIPT_OP_GT;
+	scriptlval.compare_op = SCRIPT_OP_GT;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>\>=				{
 	debug ("script greater than equal\n");
-	yylval.compare_op = SCRIPT_OP_GTE;
+	scriptlval.compare_op = SCRIPT_OP_GTE;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>\<				{
 	debug ("script less than\n");
-	yylval.compare_op = SCRIPT_OP_LT;
+	scriptlval.compare_op = SCRIPT_OP_LT;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>\<=				{
 	debug ("script less than equal\n");
-	yylval.compare_op = SCRIPT_OP_LTE;
+	scriptlval.compare_op = SCRIPT_OP_LTE;
 	return SCRIPT_COMPARE_OP;
 }
 <IF>&&				{
 	debug ("script AND\n");
-	yylval.binary_op = SCRIPT_OP_AND;
+	scriptlval.binary_op = SCRIPT_OP_AND;
 	return SCRIPT_BINARY_OP;
 }
 <IF>\|\|			{
 	debug ("script OR\n");
-	yylval.binary_op = SCRIPT_OP_OR;
+	scriptlval.binary_op = SCRIPT_OP_OR;
 	return SCRIPT_BINARY_OP;
 }
 <IF>!				{
 	debug ("script NOT\n");
-	yylval.unary_op = SCRIPT_OP_NOT;
+	scriptlval.unary_op = SCRIPT_OP_NOT;
 	return SCRIPT_UNARY_OP;
 }
 <IF>exists[[:blank:]]*			{
 	debug ("script exists\n");
-	yylval.test_op = SCRIPT_OP_EXISTS;
+	scriptlval.test_op = SCRIPT_OP_EXISTS;
 	return SCRIPT_TEST_OP;
 }
 <IF>then[[:blank:]]*			{
@@ -123,27 +121,27 @@ extern gboolean script_running;
 }
 <COMMENT>.			{}
 <INITIAL>[^:[:blank:]]+:	{
-        yylval.string = g_strndup (yytext, yyleng - 1);
-	debug ("got label: %s\n", yylval.string);
+        scriptlval.string = g_strndup (yytext, yyleng - 1);
+	debug ("got label: %s\n", scriptlval.string);
         return SCRIPT_LABEL;
 }
 <VAR>[_[:alnum:]]+		{
         yy_pop_state ();
-        yylval.string = lexer_string ();
-        debug ("script variable: %s\n", yylval.string);
+        scriptlval.string = lexer_string ();
+        debug ("script variable: %s\n", scriptlval.string);
         return SCRIPT_VARIABLE;
 }
 <IF_>[_[:alnum:]]+		{
         yy_pop_state ();
-        yylval.string = lexer_string ();
-        debug ("script if_: %s\n", yylval.string);
+        scriptlval.string = lexer_string ();
+        debug ("script if_: %s\n", scriptlval.string);
         return SCRIPT_IF_;
 }
 <VAR>.				{
 	yy_pop_state ();
 	yymore ();
-	yylval.string = lexer_string ();
-	debug ("script string: %s\n", yylval.string);
+	scriptlval.string = lexer_string ();
+	debug ("script string: %s\n", scriptlval.string);
 	return SCRIPT_STRING;
 }
 <IF>\"			{
@@ -151,8 +149,8 @@ extern gboolean script_running;
 }
 <QUOTE>\"			{ yy_pop_state (); }
 <QUOTE>[^"%\r\n]+		{
-	yylval.string = lexer_string ();
-	debug ("script string: %s\n", yylval.string);
+	scriptlval.string = lexer_string ();
+	debug ("script string: %s\n", scriptlval.string);
 	return SCRIPT_STRING;
 }
 <INITIAL>[[:alpha:]]		{
@@ -161,16 +159,16 @@ extern gboolean script_running;
 	yymore ();
 }
 <COMMAND>[^%\r\n]+		{
-        yylval.string = lexer_string ();
-        debug ("script string: %s\n", yylval.string);
+        scriptlval.string = lexer_string ();
+        debug ("script string: %s\n", scriptlval.string);
         return SCRIPT_STRING;
 }
 <IF,COMMAND,QUOTE>%		{
 	yy_push_state (VAR);
 }
 <IF>[_[:alnum:]]+[[:blank:]]*	{
-	yylval.string = lexer_string ();
-	debug ("script if_string: %s\n", yylval.string);
+	scriptlval.string = lexer_string ();
+	debug ("script if_string: %s\n", scriptlval.string);
 	return SCRIPT_STRING;
 }
 <INITIAL,IF>[[:blank:]]+		{}
