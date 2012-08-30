@@ -629,11 +629,11 @@ script_run (gpointer data)
 		// if we're suspended, wait until we aren't to continue
                 g_mutex_lock (script_mutex);
                 while (suspended && script_running) {
-                        GTimeVal time;
+                        gint64 end_time;
 
-                        g_get_current_time (&time);
-                        g_time_val_add (&time, SCRIPT_TIMEOUT);
-                        g_cond_timed_wait (suspend_cond, script_mutex, &time);
+                        end_time = g_get_monotonic_time () + SCRIPT_TIMEOUT;
+                        g_cond_wait_until (suspend_cond, script_mutex,
+					end_time);
                 }
                 g_mutex_unlock (script_mutex);
 	}
@@ -863,11 +863,8 @@ get_line (void)
         char *line;
 
         do {
-                GTimeVal time;
-
-                g_get_current_time (&time);
-                g_time_val_add (&time, SCRIPT_TIMEOUT);
-                line = g_async_queue_timed_pop (script_line_queue, &time);
+                line = g_async_queue_timeout_pop (script_line_queue,
+				SCRIPT_TIMEOUT);
         } while (line == NULL && script_running);
 
         return line;
@@ -894,11 +891,10 @@ next_room_wait (GMutex *mutex)
         gboolean moved;
 
         do {
-                GTimeVal time;
+                gint64 end_time;
 
-                g_get_current_time (&time);
-                g_time_val_add (&time, SCRIPT_TIMEOUT);
-                moved = g_cond_timed_wait (move_cond, mutex, &time);
+		end_time = g_get_monotonic_time () + SCRIPT_TIMEOUT;
+                moved = g_cond_wait_until (move_cond, mutex, end_time);
         } while (!moved && script_running);
 }
 
@@ -1246,11 +1242,11 @@ script_wait (GList *args)
 
         // wait for a prompt
         do {
-                GTimeVal time;
+                gint64 end_time;
 
-                g_get_current_time (&time);
-                g_time_val_add (&time, SCRIPT_TIMEOUT);
-                got_wait = g_cond_timed_wait (wait_cond, script_mutex, &time);
+                end_time = g_get_monotonic_time () + SCRIPT_TIMEOUT;
+                got_wait = g_cond_wait_until (wait_cond, script_mutex,
+				end_time);
         } while (!got_wait && script_running);
 
 	g_mutex_unlock (script_mutex);

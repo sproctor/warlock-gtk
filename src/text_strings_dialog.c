@@ -586,13 +586,11 @@ static void
 rebuild_list (void)
 {
         GSList *highlight_list, *cur;
-        GtkListStore *old_list;
         GtkWidget *highlight_view;
         int i;
 
         debug ("called rebuild_list\n");
 
-        old_list = highlight_dialog_list;
         highlight_view = glade_xml_get_widget (warlock_xml, "highlight_view");
 
         /* remove old notifiers */
