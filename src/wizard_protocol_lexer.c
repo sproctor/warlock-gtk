@@ -694,7 +694,6 @@ char *wizardtext;
 #include <ctype.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "highlight.h"
 #include "debug.h"
@@ -710,7 +709,6 @@ char *wizardtext;
 
 /* external global variables */
 extern SimuConnection *connection;
-extern GladeXML *warlock_xml;
 extern gboolean prompting;
 
 /* local variables */
@@ -731,7 +729,7 @@ static char *parse_hand (char *str);
 static void unhandled_character (void);
 #define YY_NO_INPUT 1
 
-#line 735 "wizard_protocol_lexer.c"
+#line 733 "wizard_protocol_lexer.c"
 
 #define INITIAL 0
 #define COMMAND 1
@@ -918,9 +916,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 71 "wizard_protocol_lexer.l"
+#line 69 "wizard_protocol_lexer.l"
 
-#line 924 "wizard_protocol_lexer.c"
+#line 922 "wizard_protocol_lexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -1005,12 +1003,12 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 72 "wizard_protocol_lexer.l"
+#line 70 "wizard_protocol_lexer.l"
 BEGIN (COMMAND);
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 73 "wizard_protocol_lexer.l"
+#line 71 "wizard_protocol_lexer.l"
 {
 	char *tmp;
 	tmp = lexer_string ();
@@ -1023,7 +1021,7 @@ YY_RULE_SETUP
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 81 "wizard_protocol_lexer.l"
+#line 79 "wizard_protocol_lexer.l"
 {
 	char *params;
 	params = lexer_string ();
@@ -1034,51 +1032,51 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 88 "wizard_protocol_lexer.l"
+#line 86 "wizard_protocol_lexer.l"
 {
 	highlighting = TRUE;
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 91 "wizard_protocol_lexer.l"
+#line 89 "wizard_protocol_lexer.l"
 {
 	highlighting = FALSE;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 94 "wizard_protocol_lexer.l"
+#line 92 "wizard_protocol_lexer.l"
 warlock_bell ();
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 95 "wizard_protocol_lexer.l"
+#line 93 "wizard_protocol_lexer.l"
 arrival_string();
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 96 "wizard_protocol_lexer.l"
+#line 94 "wizard_protocol_lexer.l"
 output_string ();
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 97 "wizard_protocol_lexer.l"
+#line 95 "wizard_protocol_lexer.l"
 eol_code ();
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 98 "wizard_protocol_lexer.l"
+#line 96 "wizard_protocol_lexer.l"
 unhandled_character();
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 99 "wizard_protocol_lexer.l"
+#line 97 "wizard_protocol_lexer.l"
 ECHO;
 	YY_BREAK
-#line 1082 "wizard_protocol_lexer.c"
+#line 1080 "wizard_protocol_lexer.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMAND):
 case YY_STATE_EOF(PARAMS):
@@ -2041,7 +2039,7 @@ void wizardfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 98 "wizard_protocol_lexer.l"
+#line 97 "wizard_protocol_lexer.l"
 
 
 static char *
@@ -2066,7 +2064,7 @@ unrecognized_command (int command)
         list = g_slist_append (list, GINT_TO_POINTER (command));
 
         /* display a warning */
-        parent = glade_xml_get_widget (warlock_xml, "main_window");
+        parent = warlock_get_widget ("main_window");
         dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
                         GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, 

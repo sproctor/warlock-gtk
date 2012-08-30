@@ -25,7 +25,6 @@
 #include <ctype.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "highlight.h"
 #include "debug.h"
@@ -41,7 +40,6 @@
 
 /* external global variables */
 extern SimuConnection *connection;
-extern GladeXML *warlock_xml;
 extern gboolean prompting;
 
 /* local variables */
@@ -119,7 +117,7 @@ unrecognized_command (int command)
         list = g_slist_append (list, GINT_TO_POINTER (command));
 
         /* display a warning */
-        parent = glade_xml_get_widget (warlock_xml, "main_window");
+        parent = warlock_get_widget ("main_window");
         dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
                         GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, 

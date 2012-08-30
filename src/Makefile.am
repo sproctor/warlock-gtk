@@ -6,7 +6,7 @@ INCLUDES = \
 BUILT_SOURCES	= script_parser.h script_lexer.h
 bin_PROGRAMS    = warlock
 
-dist_pkgdata_DATA = warlock.glade
+dist_pkgdata_DATA = warlock.ui
 
 schemadir   = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = warlock.schemas

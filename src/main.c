@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 #include <gdk/gdkkeysyms.h>
 
 #include "simu_connection.h"
@@ -38,7 +37,7 @@
 
 extern SimuConnection *connection;
 
-GladeXML *warlock_xml = NULL;
+GtkBuilder *warlock_xml = NULL;
 int port = 0;
 char *key = NULL;
 char *host = NULL;
@@ -131,7 +130,8 @@ int main (int argc, char *argv[])
 {
         GtkWidget *main_window = NULL;
         int width, height;
-	char *glade_filename;
+	char *ui_xml_filename;
+	GError *err;
 
 #if 0
 #ifdef ENABLE_NLS
@@ -149,21 +149,23 @@ int main (int argc, char *argv[])
 	// calls g_option_context_parse, which initializes gtk
         parse_arguments (argc, argv);
 
-	// initialize glade data
-	glade_filename = g_build_filename (PACKAGE_DATA_DIR, PACKAGE,
-			"warlock.glade", NULL);
-        warlock_xml = glade_xml_new (glade_filename, NULL, NULL);
-	g_free (glade_filename);
-	if (warlock_xml == NULL) {
-		g_printerr ("Could not find glade file.\n");
+	// initialize gtk builder data
+	ui_xml_filename = g_build_filename (PACKAGE_DATA_DIR, PACKAGE,
+			"warlock.ui", NULL);
+	err = NULL;
+        warlock_xml = gtk_builder_new ();
+	if (!gtk_builder_add_from_file (warlock_xml, ui_xml_filename, &err)) {
+		g_warning ("Couldn't load builder file: %s", err->message);
+		g_error_free (err);
 		exit (1);
 	}
+	g_free (ui_xml_filename);
 
         warlock_init ();
 
-        glade_xml_signal_autoconnect (warlock_xml);
+        gtk_builder_connect_signals (warlock_xml, NULL);
 
-        main_window = glade_xml_get_widget (warlock_xml, "main_window");
+        main_window = warlock_get_widget ("main_window");
 
         /* read window width from config */
         width = preferences_get_int (preferences_get_key (PREF_WINDOW_WIDTH));
@@ -287,7 +289,7 @@ on_about_activate                     (GtkMenuItem     *menuitem,
 {
 	GtkWidget *about_dialog;
 
-	about_dialog = glade_xml_get_widget (warlock_xml, "about_dialog");
+	about_dialog = warlock_get_widget ("about_dialog");
 	gtk_widget_show (about_dialog);
 }
 
@@ -368,7 +370,7 @@ on_preferences_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         GtkWidget *dialog;
 
-        dialog = glade_xml_get_widget (warlock_xml, "preferences_dialog");
+        dialog = warlock_get_widget ("preferences_dialog");
         gtk_widget_show (dialog);
 }
 
@@ -378,7 +380,7 @@ on_text_strings_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         GtkWidget *dialog;
 
-        dialog = glade_xml_get_widget (warlock_xml, "text_strings_dialog");
+        dialog = warlock_get_widget ("text_strings_dialog");
         gtk_widget_show (dialog);
 }
 
@@ -388,7 +390,7 @@ on_macros_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
         GtkWidget *dialog;
 
-        dialog = glade_xml_get_widget (warlock_xml, "macros_dialog");
+        dialog = warlock_get_widget ("macros_dialog");
         gtk_widget_show (dialog);
 }
 
@@ -404,8 +406,7 @@ on_execute_menu_item_activate          (GtkMenuItem     *menuitem,
         char *key;
 
         file_chooser = gtk_file_chooser_dialog_new ("Select script to run",
-                        GTK_WINDOW (glade_xml_get_widget (warlock_xml,
-                                        "main_window")),
+                        GTK_WINDOW (warlock_get_widget ("main_window")),
                         GTK_FILE_CHOOSER_ACTION_OPEN,
                         GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                         GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
@@ -455,7 +456,7 @@ void on_stop_menu_item_activate (GtkMenuItem *menuitem, gpointer user_data)
 EXPORT
 void on_connections_activate (GtkMenuItem *menuitem, gpointer user_data)
 {
-        gtk_widget_show (glade_xml_get_widget (warlock_xml, "profile_dialog"));
+        gtk_widget_show (warlock_get_widget ("profile_dialog"));
 }
 
 EXPORT

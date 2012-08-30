@@ -23,14 +23,11 @@
 #include <stdlib.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "warlock.h"
 #include "script.h"
 #include "debug.h"
 #include "warlocktime.h"
-
-extern GladeXML *warlock_xml;
 
 static GtkWidget *rt_bar = NULL;;
 static GtkWidget *time_label = NULL;
@@ -128,8 +125,8 @@ static gboolean update_time (gpointer data)
 
 void warlock_time_init (void)
 {
-        rt_bar = glade_xml_get_widget (warlock_xml, "roundtime_bar");
-        time_label = glade_xml_get_widget (warlock_xml, "time_label");
+        rt_bar = warlock_get_widget ("roundtime_bar");
+        time_label = warlock_get_widget ("time_label");
 
         timer = g_timer_new ();
         timer_mutex = g_mutex_new ();

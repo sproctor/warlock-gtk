@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "warlock.h"
 #include "macro.h"
@@ -33,9 +32,6 @@
 #include "warlocktime.h"
 #include "warlockview.h"
 #include "preferences.h"
-
-/* external variables */
-extern GladeXML *warlock_xml;
 
 /* local variables */
 static GHashTable *macros = NULL;
@@ -131,7 +127,7 @@ static char *prompt_string (const char *title)
         char *text;
 
 	dialog = gtk_dialog_new_with_buttons (title, GTK_WINDOW
-                        (glade_xml_get_widget (warlock_xml, "main_window")),
+                        (warlock_get_widget ("main_window")),
                         GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
                         GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);

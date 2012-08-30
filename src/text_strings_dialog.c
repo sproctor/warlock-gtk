@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "preferences.h"
 #include "highlight.h"
@@ -57,9 +56,6 @@ static void set_color_button_properties (const char *key, GtkWidget* button);
 static void set_font_button_properties (const char *key, GtkWidget* button);
 static void highlights_view_init (void);
 
-/* external variables */
-extern GladeXML *warlock_xml;
-
 /* local variables */
 static GtkListStore *highlight_dialog_list = NULL;
 static GSList *edit_notifiers = NULL;
@@ -79,7 +75,7 @@ text_strings_dialog_init (void)
 }
 
 /************************************************************************
- * Glade signal handlers                                                *
+ * signal handlers                                                *
  ************************************************************************/
 
 /* hide the window when the close button is hit */
@@ -89,7 +85,7 @@ on_text_strings_close_button_clicked (GtkButton *button, gpointer user_data)
 {
         GtkWidget *dialog;
 
-        dialog = glade_xml_get_widget (warlock_xml, "text_strings_dialog");
+        dialog = warlock_get_widget ("text_strings_dialog");
         gtk_widget_hide (dialog);
 }
 
@@ -101,7 +97,7 @@ on_text_strings_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
 {
         GtkWidget *dialog;
 
-        dialog = glade_xml_get_widget (warlock_xml, "text_strings_dialog");
+        dialog = warlock_get_widget ("text_strings_dialog");
         gtk_widget_hide (dialog);
 
 	return TRUE;
@@ -118,7 +114,7 @@ on_highlight_down_button_clicked (GtkButton *button, gpointer user_data)
         int id, next_id;
 
         /* get the iter of the currently selected highlight */
-        view = glade_xml_get_widget (warlock_xml, "highlight_view");
+        view = warlock_get_widget ("highlight_view");
         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selection, NULL, &iter)) {
                 /* return if there is no selected highlight */
@@ -156,7 +152,7 @@ on_highlight_up_button_clicked (GtkButton *button, gpointer user_data)
         int id, prev_id;
 
         /* get the currently selected highlight */
-        view = glade_xml_get_widget (warlock_xml, "highlight_view");
+        view = warlock_get_widget ("highlight_view");
         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selection, NULL, &iter)) {
                 /* return if there is no currently selected highlight */
@@ -233,7 +229,7 @@ on_highlight_remove_button_clicked (GtkButton *button, gpointer user_data)
         GtkTreeIter iter, *other_iter;
 
         /* get the iter of the currently selected highlight */
-        view = glade_xml_get_widget (warlock_xml, "highlight_view");
+        view = warlock_get_widget ("highlight_view");
         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selection, NULL, &iter)) {
                 /* return if there is no selected highlight */
@@ -305,7 +301,7 @@ highlights_view_init (void)
 
         rebuild_list ();
 
-        highlight_view = glade_xml_get_widget (warlock_xml, "highlight_view");
+        highlight_view = warlock_get_widget ("highlight_view");
 
         /* add the case insensitive column */
         toggle_renderer = gtk_cell_renderer_toggle_new ();
@@ -337,7 +333,7 @@ highlights_view_init (void)
                         NULL);
 
         /* create the color/font buttons and attach them to the table */
-        table = glade_xml_get_widget (warlock_xml, "highlight_buttons_table");
+        table = warlock_get_widget ("highlight_buttons_table");
         for (i = 0; i < HIGHLIGHT_MATCHES; i++) {
                 GtkWidget *text_button;
                 GtkWidget *base_button;
@@ -591,7 +587,7 @@ rebuild_list (void)
 
         debug ("called rebuild_list\n");
 
-        highlight_view = glade_xml_get_widget (warlock_xml, "highlight_view");
+        highlight_view = warlock_get_widget ("highlight_view");
 
         /* remove old notifiers */
         for (cur = highlight_notifiers; cur != NULL; cur = cur->next) {

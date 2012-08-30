@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "preferences.h"
 #include "preferences_dialog.h"
@@ -33,8 +32,6 @@
 #include "warlockcolorbutton.h"
 #include "warlockfontbutton.h"
 #include "warlockview.h"
-
-extern GladeXML *warlock_xml;
 
 static void
 on_checkbutton_toggled (GtkToggleButton *togglebutton, gpointer user_data)
@@ -52,7 +49,7 @@ init_toggle (char *name, Preference pref)
         gboolean bval;
         GtkWidget *widget;
 
-        widget = glade_xml_get_widget (warlock_xml, name);
+        widget = warlock_get_widget (name);
 
         bval = preferences_get_bool (preferences_get_key (pref));
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), bval);
@@ -78,7 +75,7 @@ init_spin (char *name, Preference pref)
         GtkWidget *widget;
         int ival;
 
-        widget = glade_xml_get_widget (warlock_xml, name);
+        widget = warlock_get_widget (name);
 
         ival = preferences_get_int (preferences_get_key (pref));
         gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), (double)ival);
@@ -103,7 +100,7 @@ init_entry (char *name, Preference pref)
         GtkWidget *widget;
         char *sval;
 
-        widget = glade_xml_get_widget (warlock_xml, name);
+        widget = warlock_get_widget (name);
 
         sval = preferences_get_string (preferences_get_key (pref));
 	if (sval != NULL) {
@@ -144,7 +141,7 @@ init_file (char *name, Preference pref)
         GtkWidget *widget;
         char *sval;
 
-        widget = glade_xml_get_widget (warlock_xml, name);
+        widget = warlock_get_widget (name);
 
         sval = preferences_get_string (preferences_get_key (pref));
 	debug("sval: %s\n", sval);
@@ -209,7 +206,7 @@ init_color (char *name, Preference pref)
         GdkColor *color;
         GtkWidget *box;
 
-        box = glade_xml_get_widget (warlock_xml, name);
+        box = warlock_get_widget (name);
         widget = warlock_color_button_new ();
 
         gtk_box_pack_start (GTK_BOX (box), widget, FALSE, TRUE, 0);
@@ -238,7 +235,7 @@ init_font (char *name, Preference pref)
         const char *sval;
         char *key;
 
-        box = glade_xml_get_widget (warlock_xml, name);
+        box = warlock_get_widget (name);
         widget = warlock_font_button_new ();
 
         gtk_box_pack_start (GTK_BOX (box), widget, FALSE, TRUE, 0);
@@ -293,8 +290,7 @@ EXPORT
 void
 on_preferences_close_button_clicked (GtkButton *button, gpointer user_data)
 {
-        gtk_widget_hide (glade_xml_get_widget (warlock_xml,
-				"preferences_dialog"));
+        gtk_widget_hide (warlock_get_widget ("preferences_dialog"));
 }
 
 EXPORT
@@ -302,8 +298,7 @@ gboolean
 on_preferences_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)
 {
-        gtk_widget_hide (glade_xml_get_widget (warlock_xml,
-				"preferences_dialog"));
+        gtk_widget_hide (warlock_get_widget ("preferences_dialog"));
 
 	return TRUE;
 }

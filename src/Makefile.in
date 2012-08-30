@@ -234,7 +234,7 @@ INCLUDES = \
         @PACKAGE_CFLAGS@ @PCRE_CFLAGS@
 
 BUILT_SOURCES = script_parser.h script_lexer.h
-dist_pkgdata_DATA = warlock.glade
+dist_pkgdata_DATA = warlock.ui
 schemadir = @GCONF_SCHEMA_FILE_DIR@
 schema_DATA = warlock.schemas
 EXTRA_DIST = $(schema_DATA)

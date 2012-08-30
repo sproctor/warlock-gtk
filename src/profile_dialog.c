@@ -24,16 +24,12 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "debug.h"
 #include "preferences.h"
 #include "simu_connection.h"
 #include "sge_connection.h"
 #include "warlock.h"
-
-/* external variables */
-extern GladeXML *warlock_xml;
 
 /* data types */
 enum {
@@ -128,7 +124,7 @@ static void rebuild_profile_list (void)
 
         debug ("rebuilding list\n");
 
-        profile_view = glade_xml_get_widget (warlock_xml, "profile_view");
+        profile_view = warlock_get_widget ("profile_view");
 
         /* remember the currently selected highlight */
         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (profile_view));
@@ -271,7 +267,7 @@ static void load_profile (SgeState state, gpointer user_data)
         }
 
         if (state >= SGE_ACCOUNT) {
-                table = glade_xml_get_widget (warlock_xml, "profile_table");
+                table = warlock_get_widget ("profile_table");
                 table_pos = 0;
 
                 label = gtk_label_new ("Username:");
@@ -453,7 +449,7 @@ static void profile_clear (void)
 {
         GtkTable *table;
 
-        table = GTK_TABLE (glade_xml_get_widget (warlock_xml, "profile_table"));
+        table = GTK_TABLE (warlock_get_widget ("profile_table"));
         gtk_container_forall (GTK_CONTAINER (table), destroy_widget, NULL);
 }
 
@@ -477,7 +473,7 @@ void profile_dialog_init (void)
         GtkTreeViewColumn *column;
         GtkTreeSelection *selection;
 
-        profile_view = glade_xml_get_widget (warlock_xml, "profile_view");
+        profile_view = warlock_get_widget ("profile_view");
 
         renderer = gtk_cell_renderer_text_new ();
         g_signal_connect ((gpointer)renderer, "edited",
@@ -668,7 +664,7 @@ static int get_id (void)
         GtkTreeSelection *selection;
         int id;
 
-        view = glade_xml_get_widget (warlock_xml, "profile_view");
+        view = warlock_get_widget ("profile_view");
         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selection, NULL, &iter)) {
                 return -1;
@@ -683,7 +679,7 @@ static void close_window (void)
 {
         automated = FALSE;
         load_profile (SGE_NONE, NULL);
-        gtk_widget_hide (glade_xml_get_widget (warlock_xml, "profile_dialog"));
+        gtk_widget_hide (warlock_get_widget ("profile_dialog"));
 }
 
 EXPORT

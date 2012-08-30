@@ -24,14 +24,10 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "warlock.h"
 #include "status.h"
 #include "debug.h"
-
-/* external variables */
-extern GladeXML *warlock_xml;
 
 /* change this to change the size of the status icons in the interface */
 #define STATUS_ICON_WIDTH       32
@@ -230,7 +226,7 @@ unrecognized_status (int i)
         list = g_slist_append (list, GINT_TO_POINTER (i));
 
         /* display a warning */
-        parent = glade_xml_get_widget (warlock_xml, "main_window");
+        parent = warlock_get_widget ("main_window");
         dialog = gtk_message_dialog_new (GTK_WINDOW (parent),
                         GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, 

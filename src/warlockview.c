@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 #include <glib/gprintf.h>
 
 #include "warlock.h"
@@ -53,7 +52,6 @@ struct _WarlockView {
 };
 
 /* external global variables */
-extern GladeXML		*warlock_xml;
 extern GtkTextTagTable	*highlight_tag_table;
 extern GtkTextTagTable	*text_tag_table;
 extern gboolean		 script_running;
@@ -346,7 +344,7 @@ view_detach (EggDockItem *dockobject, gboolean b, WarlockView *view)
 
 static WarlockView *
 warlock_view_init (Preference key, const char *name, const char *title,
-		const char *glade_name)
+		const char *widget_name)
 {
         WarlockView *warlock_view;
 	gboolean shown;
@@ -360,16 +358,14 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
 	} else {
-		warlock_view->widget = glade_xml_get_widget (warlock_xml,
-				"main_window_frame");
+		warlock_view->widget = warlock_get_widget ("main_window_frame");
 		shown = TRUE;
 		main_view = warlock_view;
 	}
 	warlock_view->gconf_key = key;
 
-	if (glade_name != NULL) {
-		warlock_view->menuitem = glade_xml_get_widget (warlock_xml,
-				glade_name);
+	if (widget_name != NULL) {
+		warlock_view->menuitem = warlock_get_widget (widget_name);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
 				(warlock_view->menuitem), shown);
 	}

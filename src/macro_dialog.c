@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 #include <gdk/gdkkeysyms.h>
 
 #include "preferences.h"
@@ -42,8 +41,6 @@ enum {
         N_COLUMNS
 };
 
-extern GladeXML *warlock_xml;
-
 static GtkListStore *macro_list = NULL;
 
 EXPORT
@@ -58,7 +55,7 @@ on_macro_remove_button_clicked (GtkButton *button, gpointer user_data)
 
         g_assert (macro_list != NULL);
 
-        view = glade_xml_get_widget (warlock_xml, "macro_view");
+        view = warlock_get_widget ("macro_view");
         selected_macro = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selected_macro, NULL, &iter)) {
                 /* if there's no selected macro, don't do anything */
@@ -138,7 +135,7 @@ static void rebuild_list (void)
         GSList *macro_pref_list, *cur;
         GtkWidget *macro_view;
 
-        macro_view = glade_xml_get_widget (warlock_xml, "macro_view");
+        macro_view = warlock_get_widget ("macro_view");
 
 
         /* create and fill the macro dialog list */
@@ -198,7 +195,7 @@ void macro_dialog_init (void)
 
         rebuild_list ();
 
-        macro_view = glade_xml_get_widget (warlock_xml, "macro_view");
+        macro_view = warlock_get_widget ("macro_view");
 
         /* add the key column */
         key_renderer = gtk_cell_renderer_text_new ();
@@ -298,8 +295,7 @@ static void create_macro_grab_dialog (char *key)
         GtkWidget *label;
 
         dialog = gtk_dialog_new_with_buttons (_("Macro Key"),
-                        GTK_WINDOW (glade_xml_get_widget (warlock_xml,
-                                        "main_window")),
+                        GTK_WINDOW (warlock_get_widget ("main_window")),
                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                         NULL);
@@ -332,7 +328,7 @@ void on_macro_change_button_clicked (GtkButton *button, gpointer user_data)
 
         g_assert (macro_list != NULL);
 
-        view = glade_xml_get_widget (warlock_xml, "macro_view");
+        view = warlock_get_widget ("macro_view");
         selected_macro = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
         if (!gtk_tree_selection_get_selected (selected_macro, NULL, &iter)) {
                 /* if there's no selected macro, don't do anything */
@@ -352,7 +348,7 @@ EXPORT
 void
 on_macros_close_button_clicked (GtkButton *button, gpointer user_data)
 {
-        gtk_widget_hide (glade_xml_get_widget (warlock_xml, "macros_dialog"));
+        gtk_widget_hide (warlock_get_widget ("macros_dialog"));
 }
 
 EXPORT
@@ -360,7 +356,7 @@ gboolean
 on_macros_dialog_delete_event (GtkWidget *widget, GdkEvent *event,
                 gpointer user_data)
 {
-        gtk_widget_hide (glade_xml_get_widget (warlock_xml, "macros_dialog"));
+        gtk_widget_hide (warlock_get_widget ("macros_dialog"));
 
 	return TRUE;
 }

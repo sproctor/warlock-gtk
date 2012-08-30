@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "warlock.h"
 #include "debug.h"

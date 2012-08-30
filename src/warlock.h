@@ -38,5 +38,6 @@ void warlock_send (const char *fmt, ...);
 void warlock_bell (void);
 void warlock_init (void);
 void warlock_connection_init (void);
+GtkWidget *warlock_get_widget (const char *widget_name);
 
 #endif

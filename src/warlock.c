@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 #include <glib/gprintf.h>
 
 #include "highlight.h"
@@ -53,7 +52,7 @@
 extern int wizardparse (void);
 extern int wizard_scan_string(const char*);
 
-extern GladeXML *warlock_xml;
+extern GtkBuilder *warlock_xml;
 extern char *host;
 extern char *key;
 extern int port;
@@ -132,12 +131,11 @@ void warlock_init (void)
         preferences_dialog_init ();
         profile_dialog_init ();
         text_strings_dialog_init ();
-        hand_init (glade_xml_get_widget (warlock_xml, "left_hand_label"),
-                        glade_xml_get_widget (warlock_xml, "right_hand_label"));
-        status_init (glade_xml_get_widget (warlock_xml, "status_table"));
-        compass_init (glade_xml_get_widget (warlock_xml, "compass_table"));
-        warlock_entry_init (glade_xml_get_widget (warlock_xml,
-                                "warlock_entry"));
+        hand_init (warlock_get_widget ("left_hand_label"),
+                        warlock_get_widget ("right_hand_label"));
+        status_init (warlock_get_widget ("status_table"));
+        compass_init (warlock_get_widget ("compass_table"));
+        warlock_entry_init (warlock_get_widget ("warlock_entry"));
         macro_init ();
         macro_dialog_init ();
         warlock_time_init ();
@@ -243,23 +241,26 @@ void warlock_connection_init (void)
         if (host == NULL || key == NULL || port == 0 || connection != NULL) {
                 debug ("wait nevermind, we're not\n");
                 if (connection == NULL) {
-                        gtk_widget_show (glade_xml_get_widget (warlock_xml,
-                                                "profile_dialog"));
+                        gtk_widget_show (warlock_get_widget ("profile_dialog"));
                 }
                 return;
         }
 
-	connect_dialog = glade_xml_get_widget (warlock_xml,
-                        "connect_dialog");
+	connect_dialog = warlock_get_widget ("connect_dialog");
 	gtk_window_set_position (GTK_WINDOW (connect_dialog),
 			GTK_WIN_POS_CENTER_ON_PARENT);
 	gtk_window_set_transient_for (GTK_WINDOW (connect_dialog),
-			GTK_WINDOW (glade_xml_get_widget (warlock_xml,
-                                        "main_window")));
+			GTK_WINDOW (warlock_get_widget ("main_window")));
 	gtk_widget_show (connect_dialog);
 
         connection = simu_connection_init (host, port,
                         handle_init, connect_dialog,
                         handle_line, NULL,
                         handle_quit, NULL);
+}
+
+GtkWidget *
+warlock_get_widget (const char *widget_name)
+{
+	return GTK_WIDGET (gtk_builder_get_object (warlock_xml, widget_name));
 }

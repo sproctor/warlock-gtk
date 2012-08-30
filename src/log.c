@@ -23,15 +23,11 @@
 #include <time.h>
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "debug.h"
 #include "preferences.h"
 #include "warlockview.h"
 #include "warlock.h"
-
-/* external global variables */
-extern GladeXML *warlock_xml;
 
 /* local variables */
 static GIOChannel *log_file = NULL;
@@ -187,7 +183,7 @@ on_save_history_as_activate (GtkMenuItem *menuitem, gpointer user_data)
 	char *log_path, *name, *key;
 
 	dialog = gtk_file_chooser_dialog_new ("Save File", GTK_WINDOW
-			(glade_xml_get_widget (warlock_xml, "main_window")),
+			(warlock_get_widget ("main_window")),
 			GTK_FILE_CHOOSER_ACTION_SAVE,
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
