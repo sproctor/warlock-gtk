@@ -1,0 +1,15 @@
+# Compiled files
+*.o
+
+# Build files
+Makefile
+.deps
+*~
+autom4te.cache
+config.h*
+*.log
+config.status
+stamp-h1
+
+# Vim temporary files
+*.swp
