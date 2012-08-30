@@ -8,7 +8,6 @@ For 0.5
 - move to GTK 2.10 and get rid of the dock widget in favor of notebook
 
 Maybe 0.5
-- get javascript working
 - search text view for some text
 - implement triggers
 - Figure out what U is
@@ -37,13 +36,8 @@ Future
 - redo profile dialog to show what is happening, not the entry stuff when
   connecting/doing the next step. whichever.
 - back button in SGE interface
-- support telnet-based muds
 
-- support stormfront protocol
-- port to windows
 - per character preferences/highlights
-- support multiple connections at once through tabs
-- support importing preferences from the wizard
 - Allow recording of scripts
 - implement aliases http://ytin.sourceforge.net/cgi-bin/help.pl/ytin?alias
 - add sync function from wizard
@@ -56,7 +50,6 @@ Possible:
 - ThreadStop name, ThreadPause name, ThreadResume name, etc work on that thread
 - implement DRConnect scripts: http://www.dr-connect.zinious.com/
 - Import Wizard Configuration
-- EXP Calculator (maybe?)
 
 --------------------------------------------------
 if you have a feature request that isn't listed in this file, feel free
