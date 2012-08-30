@@ -432,12 +432,15 @@ GSList *preferences_get_list (const char *key, PreferencesValue val)
 
 void preferences_set_color (const char *key, const GdkRGBA *color)
 {
-        char *str;
 
-        str = gdk_rgba_to_string (color);
-        preferences_set_string (key, str);
-        if (str != NULL)
-                g_free (str);
+	if (color != NULL) {
+		char *str;
+		str = gdk_rgba_to_string (color);
+		preferences_set_string (key, str);
+		g_free (str);
+	} else {
+		preferences_set_string (key, NULL);
+	}
 }
 
 GdkRGBA *preferences_get_color (const char *key)
