@@ -31,12 +31,6 @@ esac
 AC_MSG_RESULT([$warlock_native_win32])
 AC_SUBST(WARLOCK_LIBS_EXTRA)
 
-if test x"$warlock_native_win32" = "xyes"; then
-  AC_DEFINE(XP_WIN, [], [JS System type])
-else
-  AC_DEFINE(XP_UNIX, [], [JS system type])
-fi
-
 dnl Checks for programs.
 AC_PROG_CC
 dnl AC_PROG_LIBTOOL
