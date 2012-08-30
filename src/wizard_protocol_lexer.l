@@ -66,7 +66,7 @@ static char *parse_hand (char *str);
 static void unhandled_character (void);
 %}
 
-%option prefix="wizard" nounput noyywrap
+%option prefix="wizard" nounput noyywrap noinput
 %s COMMAND PARAMS
 
 ANY             [[:alnum:][:blank:][:punct:]]
