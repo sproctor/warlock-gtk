@@ -112,8 +112,6 @@ warlock_view_create_text_view (WarlockView *warlock_view)
         gtk_text_view_set_editable (GTK_TEXT_VIEW (text_view), FALSE);
 
 
-	views = g_list_append (views, warlock_view);
-
 	warlock_view->text_buffer = gtk_text_buffer_new (highlight_tag_table);
 	warlock_view->text_view = text_view;
 	gtk_text_view_set_buffer (GTK_TEXT_VIEW (text_view),
@@ -356,6 +354,8 @@ warlock_view_init (Preference key, const char *name, const char *title,
 	warlock_view->menuitem = NULL;
 	warlock_view->name = name;
 	warlock_view->title = title;
+
+	views = g_list_append (views, warlock_view);
 
 	if (key != PREF_NONE) {
 		shown = preferences_get_bool (preferences_get_key (key));
