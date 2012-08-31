@@ -1,55 +1,48 @@
 Warlock TODO
 ------------
 
-For 0.5
+For 1.0
 
 - have system messages get their own tag
 - support for names
-- move to GTK 2.10 and get rid of the dock widget in favor of notebook
-
-Maybe 0.5
 - search text view for some text
 - implement triggers
+- per character preferences/highlights
+- save last selected profile in gconf
+
+Maybe 1.0
 - Figure out what U is
+- make disconnect do more than send quit
 
 Future
 
-- make arrival, etc remember their size and position
-- save last selected profile in gconf
-
 - make start script, pause script, last command, etc macros. remove the
   hard-coded keys
-- {scriptlet} macro command. switches entry into a script reader. you type
-  script code and it interprets the code as you type it, pausing when it needs
-  more code. hitting the macro again should switch back, but not clear the
-  script. hit escape to end the script.
 - navigation with compass
 - implement \a for macros
-
 - move images to png or svg files and make them prettier
-- make disconnect do more than send quit
 - squelch lines; also, allow users to define windows and send text to them.
   this can replace the way thoughts, arrivals, etc works.
 - implement interface for showing poison/disease
-
 - be able to create a new character through SGE
 - redo profile dialog to show what is happening, not the entry stuff when
   connecting/doing the next step. whichever.
 - back button in SGE interface
-
-- per character preferences/highlights
 - Allow recording of scripts
 - implement aliases http://ytin.sourceforge.net/cgi-bin/help.pl/ytin?alias
-- add sync function from wizard
 
 Possible:
 
+- add sync function from wizard
 - support multiple wizard scripts at once
-- implement call/return for scripts.
 - ThreadCall label name: starts a thread at the label, identified by name.
 - ThreadStop name, ThreadPause name, ThreadResume name, etc work on that thread
 - implement DRConnect scripts: http://www.dr-connect.zinious.com/
 - Import Wizard Configuration
+- {scriptlet} macro command. switches entry into a script reader. you type
+  script code and it interprets the code as you type it, pausing when it needs
+  more code. hitting the macro again should switch back, but not clear the
+  script. hit escape to end the script.
 
 --------------------------------------------------
 if you have a feature request that isn't listed in this file, feel free

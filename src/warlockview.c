@@ -44,7 +44,7 @@ struct _WarlockView {
         GtkTextBuffer	*text_buffer;
 	GtkWidget	*widget;
 	GtkWidget	*scrolled_window;
-        Preference	 gconf_key;
+        char		*shown_key;
         GtkTextMark	*mark;
 	WString		*buffer;
 	GtkWidget	*menuitem;
@@ -262,6 +262,23 @@ view_append (WarlockView *view, WString *string)
 		prompting = FALSE;
 }
 
+// window resized signal handler
+static gboolean
+warlock_view_resized (GtkWindow *window, GdkEvent *event, gpointer data)
+{
+	int width, height;
+	char *name = data;
+
+	width = event->configure.width;
+	height = event->configure.height;
+
+	preferences_set_int (preferences_get_window_key (name, "width"), width);
+	preferences_set_int (preferences_get_window_key (name, "height"),
+			height);
+
+	return FALSE;
+}
+
 // destroy the view
 static void
 view_hide (WarlockView *warlock_view)
@@ -284,16 +301,23 @@ view_show (WarlockView *view)
 
         g_assert (view != NULL);
 
-	//if (warlock_view->shown) return;
-
-        //g_assert (GTK_IS_WIDGET (view->widget));
-
 	/* FIXME: this is all an awful mess */
 	if (view->widget == NULL) {
+		int width, height;
 		view->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 		gtk_window_set_title (GTK_WINDOW (view->widget), view->title);
 		frame = gtk_frame_new (view->title);
 		gtk_container_add (GTK_CONTAINER (view->widget), frame);
+		gtk_window_set_role (GTK_WINDOW (view->widget), view->name);
+		width = preferences_get_int (preferences_get_window_key
+				(view->name, "width"));
+		height = preferences_get_int (preferences_get_window_key
+				(view->name, "height"));
+		gtk_window_set_default_size (GTK_WINDOW (view->widget), width,
+				height);
+		g_signal_connect (G_OBJECT (view->widget), "configure-event",
+			G_CALLBACK (warlock_view_resized),
+			(gpointer) view->name);
 	} else {
 		frame = view->widget;
 	}
@@ -303,9 +327,8 @@ view_show (WarlockView *view)
 	warlock_view_create_text_view (view);
 
 	/* save the status of the window */
-	if (view->gconf_key != PREF_NONE) {
-		preferences_set_bool (preferences_get_key (view->gconf_key),
-				TRUE);
+	if (view->shown_key != NULL) {
+		preferences_set_bool (view->shown_key, TRUE);
 	}
 
         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW
@@ -343,8 +366,8 @@ view_detach (EggDockItem *dockobject, gboolean b, WarlockView *view)
 #endif
 
 static WarlockView *
-warlock_view_init (Preference key, const char *name, const char *title,
-		const char *widget_name)
+warlock_view_init (const char *name, const char *title,
+		const char *menu_name)
 {
         WarlockView *warlock_view;
 	gboolean shown;
@@ -357,19 +380,18 @@ warlock_view_init (Preference key, const char *name, const char *title,
 
 	views = g_list_append (views, warlock_view);
 
-	if (key != PREF_NONE) {
-		shown = preferences_get_bool (preferences_get_key (key));
+	if (menu_name != NULL) {
+		warlock_view->shown_key = preferences_get_full_key 
+			(g_strconcat (name, "-view", NULL));
+		shown = preferences_get_bool (warlock_view->shown_key);
+		warlock_view->menuitem = warlock_get_widget (menu_name);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
+				(warlock_view->menuitem), shown);
 	} else {
+		warlock_view->shown_key = NULL;
 		warlock_view->widget = warlock_get_widget ("main_window_frame");
 		shown = TRUE;
 		main_view = warlock_view;
-	}
-	warlock_view->gconf_key = key;
-
-	if (widget_name != NULL) {
-		warlock_view->menuitem = warlock_get_widget (widget_name);
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
-				(warlock_view->menuitem), shown);
 	}
 
 	if (shown) {
@@ -411,16 +433,13 @@ warlock_views_init (void)
 {
         char *key;
 
-        main_view = warlock_view_init (PREF_NONE, "main", _("Main"), NULL);
+        main_view = warlock_view_init ("main", _("Main"), NULL);
 
-        warlock_view_init (PREF_ARRIVAL_VIEW, "arrival",
-			_("Arrivals and Departures"), "arrival_menu_item");
-        warlock_view_init (PREF_THOUGHT_VIEW, "thoughts", _("Thoughts"),
-			"thoughts_menu_item");
-        warlock_view_init (PREF_DEATH_VIEW, "death", _("Deaths"),
-			"deaths_menu_item");
-        warlock_view_init (PREF_FAMILIAR_VIEW, "familiar", _("Familiar"),
-			"familiar_menu_item");
+        warlock_view_init ("arrival", _("Arrivals and Departures"),
+			"arrival_menu_item");
+        warlock_view_init ("thoughts", _("Thoughts"), "thoughts_menu_item");
+        warlock_view_init ("death", _("Deaths"), "deaths_menu_item");
+        warlock_view_init ("familiar", _("Familiar"), "familiar_menu_item");
 
         // max buffer size init
         key = preferences_get_key (PREF_TEXT_BUFFER_SIZE);

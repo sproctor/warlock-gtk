@@ -20,6 +20,7 @@
 #define _PREFERENCES_H
 
 #define PREFS_PREFIX                    "/apps/warlock"
+#define PREFS_WINDOWS_PREFIX		PREFS_PREFIX "/windows"
 
 typedef enum {
 	PREF_NONE,
@@ -91,6 +92,8 @@ void preferences_init (void);
 
 char *preferences_get_global_key (Preference id);
 char *preferences_get_key (Preference id);
+char *preferences_get_full_key (const char *key);
+char *preferences_get_window_key (const char *name, const char *key);
 char *preferences_get_highlight_key (guint highlight_id, Preference pref_id);
 char *preferences_get_highlight_match_key (guint highlight_id, guint match_id,
                 Preference pref_id);

@@ -1,6 +1,12 @@
 NEWS for Warlock:
 -----------------------
 
+0.5:
+	- Ditched EggDock and back to windows for windows
+	- Ported to GTK 3
+	- Removed JS support
+	- Windows remember their size
+
 0.5-pre6:
 	- use EggDock for windows
 	- added script commands waitforre, deletevariable, random, call, return,

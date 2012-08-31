@@ -225,6 +225,19 @@ char *preferences_get_key (Preference id)
         return gconf_concat_dir_and_key (profile->path, key);
 }
 
+char *
+preferences_get_full_key (const char *key)
+{
+	return gconf_concat_dir_and_key (profile->path, key);
+}
+
+char *
+preferences_get_window_key (const char *name, const char *key)
+{
+	return gconf_concat_dir_and_key (gconf_concat_dir_and_key
+			(PREFS_WINDOWS_PREFIX, name), key);
+}
+
 char *preferences_get_highlight_key (guint highlight_id, Preference pref_id)
 {
         char *dir;
