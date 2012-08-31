@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.58)
 
-AC_INIT(warlock, 0.5-pre7)
+AC_INIT(warlock, 0.5)
 
 dnl copyright
 AC_COPYRIGHT([Copyright 2007 Sean Proctor <sproctor@gmail.com>
