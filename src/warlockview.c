@@ -48,7 +48,7 @@ struct _WarlockView {
         GtkTextMark	*mark;
 	WString		*buffer;
 	GtkWidget	*menuitem;
-	GSList		*listeners;
+	gboolean	shown;
 };
 
 /* external global variables */
@@ -264,7 +264,7 @@ view_append (WarlockView *view, WString *string)
 
 // window resized signal handler
 static gboolean
-warlock_view_resized (GtkWindow *window, GdkEvent *event, gpointer data)
+view_resized (GtkWindow *window, GdkEvent *event, gpointer data)
 {
 	int width, height;
 	char *name = data;
@@ -279,19 +279,41 @@ warlock_view_resized (GtkWindow *window, GdkEvent *event, gpointer data)
 	return FALSE;
 }
 
-// destroy the view
 static void
-view_hide (WarlockView *warlock_view)
+view_hide_side_effects (WarlockView *view)
 {
-        g_return_if_fail (warlock_view != NULL);
-	if (warlock_view->widget == NULL) return;
+	view->shown = FALSE;
 
-	//if (!warlock_view->shown) return;
-	 
-        g_assert (GTK_IS_WIDGET (warlock_view->widget));
+	/* save the status of the window */
+	if (view->shown_key != NULL)
+		preferences_set_bool (view->shown_key, FALSE);
 
-	gtk_widget_destroy (GTK_WIDGET (warlock_view->widget));
-	warlock_view->widget = NULL;
+	// Update the menu checkmark
+	if (view->menuitem != NULL)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
+				(view->menuitem), FALSE);
+}
+
+static void
+view_hide (WarlockView *view)
+{
+        g_return_if_fail (view != NULL && view->widget != NULL);
+
+        g_assert (GTK_IS_WIDGET (view->widget));
+
+	gtk_widget_hide (GTK_WIDGET (view->widget));
+
+	view_hide_side_effects (view);
+}
+
+static gboolean
+view_deleted (GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+	WarlockView *view = data;
+
+	view_hide (view);
+
+	return TRUE;
 }
 
 static void
@@ -301,11 +323,30 @@ view_show (WarlockView *view)
 
         g_assert (view != NULL);
 
+	view->shown = TRUE;
+
+	/* save the status of the window */
+	if (view->shown_key != NULL)
+		preferences_set_bool (view->shown_key, TRUE);
+
+	// Update the menu checkmark
+	if (view->menuitem != NULL)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
+				(view->menuitem), TRUE);
+
+	// If the window was already created, just show it.
+	if (view->scrolled_window != NULL) {
+		gtk_widget_show (GTK_WIDGET (view->widget));
+		return;
+	}
+
 	/* FIXME: this is all an awful mess */
 	if (view->widget == NULL) {
 		int width, height;
 		view->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		g_object_ref (view->widget);
 		gtk_window_set_title (GTK_WINDOW (view->widget), view->title);
+		gtk_widget_hide_on_delete (view->widget);
 		frame = gtk_frame_new (view->title);
 		gtk_container_add (GTK_CONTAINER (view->widget), frame);
 		gtk_window_set_role (GTK_WINDOW (view->widget), view->name);
@@ -316,8 +357,11 @@ view_show (WarlockView *view)
 		gtk_window_set_default_size (GTK_WINDOW (view->widget), width,
 				height);
 		g_signal_connect (G_OBJECT (view->widget), "configure-event",
-			G_CALLBACK (warlock_view_resized),
+			G_CALLBACK (view_resized),
 			(gpointer) view->name);
+		g_signal_connect (G_OBJECT (view->widget), "delete-event",
+			G_CALLBACK (view_deleted),
+			(gpointer) view);
 	} else {
 		frame = view->widget;
 	}
@@ -325,11 +369,6 @@ view_show (WarlockView *view)
         view->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 	view->buffer = w_string_new ("");
 	warlock_view_create_text_view (view);
-
-	/* save the status of the window */
-	if (view->shown_key != NULL) {
-		preferences_set_bool (view->shown_key, TRUE);
-	}
 
         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW
 			(view->scrolled_window), GTK_POLICY_NEVER,
@@ -343,38 +382,17 @@ view_show (WarlockView *view)
         gtk_widget_show_all (view->widget);
 }
 
-#if 0
-static void
-view_detach (EggDockItem *dockobject, gboolean b, WarlockView *view)
-{
-	debug ("view_detach called: %s\n", view->name);
-	if (EGG_DOCK_OBJECT_ATTACHED (view->widget)) return;
-	debug ("running\n");
-
-	/* save state of the window */
-	if (view->gconf_key != PREF_NONE) {
-		preferences_set_bool (preferences_get_key (view->gconf_key),
-				FALSE);
-	}
-
-	if (view->menuitem != NULL && gtk_check_menu_item_get_active
-			(GTK_CHECK_MENU_ITEM (view->menuitem))) {
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
-				(view->menuitem), FALSE);
-	}
-}
-#endif
-
 static WarlockView *
 warlock_view_init (const char *name, const char *title,
 		const char *menu_name)
 {
         WarlockView *warlock_view;
-	gboolean shown;
 
         warlock_view = g_new (WarlockView, 1);
 	warlock_view->widget = NULL;
 	warlock_view->menuitem = NULL;
+	warlock_view->scrolled_window = NULL;
+	warlock_view->text_view = NULL;
 	warlock_view->name = name;
 	warlock_view->title = title;
 
@@ -383,27 +401,20 @@ warlock_view_init (const char *name, const char *title,
 	if (menu_name != NULL) {
 		warlock_view->shown_key = preferences_get_full_key 
 			(g_strconcat (name, "-view", NULL));
-		shown = preferences_get_bool (warlock_view->shown_key);
+		warlock_view->shown = preferences_get_bool
+			(warlock_view->shown_key);
 		warlock_view->menuitem = warlock_get_widget (menu_name);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM
-				(warlock_view->menuitem), shown);
+				(warlock_view->menuitem), warlock_view->shown);
 	} else {
 		warlock_view->shown_key = NULL;
 		warlock_view->widget = warlock_get_widget ("main_window_frame");
-		shown = TRUE;
+		warlock_view->shown = TRUE;
 		main_view = warlock_view;
 	}
 
-	if (shown) {
+	if (warlock_view->shown)
 		view_show (warlock_view);
-	} else {
-		view_hide (warlock_view);
-	}
-
-/*
-	g_signal_connect_after (G_OBJECT (warlock_view->widget), "detach",
-			G_CALLBACK (view_detach), warlock_view);
-*/
 
         return warlock_view;
 }
@@ -537,7 +548,7 @@ warlock_view_append (const char *name, const WString *w_string)
 	WarlockView *view;
 
 	view = get_view (name);
-	if (view == NULL || view->widget == NULL) {
+	if (view == NULL || view->shown == FALSE) {
 		view = main_view;
 	}
 	view->buffer = w_string_append (view->buffer, w_string);
@@ -549,7 +560,7 @@ warlock_view_end_line (const char *name)
 	WarlockView *view;
 
 	view = get_view (name);
-	if (view == NULL || view->widget == NULL) {
+	if (view == NULL || view->shown == FALSE) {
 		view = main_view;
 	}
         view->buffer = w_string_append_c (view->buffer, '\n');
