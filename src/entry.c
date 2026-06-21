@@ -23,8 +23,6 @@
 
 #include <string.h>
 
-#include <pcre.h>
-
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -374,22 +372,20 @@ script_command (int argc, const char **argv)
 	found = FALSE;
 	for (i = 0; suffixes[i].suffix != NULL && !found; i++) {
 		char *pattern;
-		pcre *regex;
+		GRegex *regex;
 		GDir *dir;
 		GError *err;
 		const char *file;
-		const char *pcre_err;
-		int match[3];
-		int offset;
 
 		/* create the pattern */
 		pattern = g_strdup_printf ("^%s%s$", argv[0],
 				suffixes[i].suffix);
-		regex = pcre_compile (pattern, 0, &pcre_err, &offset, NULL);
+		err = NULL;
+		regex = g_regex_new (pattern, 0, 0, &err);
 		g_free (pattern);
 		if (regex == NULL) {
-			g_error ("Error compiling regex to open script at "
-					"character %d: %s\n", offset, pcre_err);
+			g_error ("Error compiling regex to open script: %s\n",
+					err->message);
 			continue;
 		}
 
@@ -398,8 +394,7 @@ script_command (int argc, const char **argv)
 		dir = g_dir_open (script_path, 0, &err);
 		print_error (err);
 		while ((file = g_dir_read_name (dir)) != NULL) {
-			if (pcre_exec (regex, NULL, file, (int)strlen (file), 0,
-						0, match, 3) >= 1) {
+			if (g_regex_match (regex, file, 0, NULL)) {
 				char *result;
 
 				result = g_build_filename (script_path, file,
@@ -411,7 +406,7 @@ script_command (int argc, const char **argv)
 			}
 		}
 		g_dir_close (dir);
-		pcre_free (regex);
+		g_regex_unref (regex);
 	}
 
 	if (!found) {

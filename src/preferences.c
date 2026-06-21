@@ -17,11 +17,16 @@
  */
 
 /*
- * highlights are stored in /apps/warlock/highlights, then a number
- * ex. /apps/warlock/highlights/4
- * /apps/warlock/highlights/4/case_sensitive - bool, case sensitive
- * /apps/warlock/highlights/4/string - string, the regex to match
- * /apps/warlock/highlights/4/text_info - list, a list of text attributes for each match in the regex
+ * Preferences are stored in an INI-style key file at
+ * $XDG_CONFIG_HOME/warlock-gtk/warlock.ini (typically
+ * ~/.config/warlock-gtk/warlock.ini).
+ *
+ * The rest of the program addresses preferences with GConf-style absolute
+ * path keys, e.g. "/apps/warlock/Default/highlights/00000A/3/text-color".
+ * Internally each such key is split on its final '/' into a GKeyFile group
+ * (everything before) and a key name (everything after).  This keeps the
+ * dynamic, hierarchical key structure (per-highlight, per-profile,
+ * per-window) working without needing a fixed schema.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,11 +35,8 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include <gtk/gtk.h>
-#include <gconf/gconf-client.h>
 
 #include "highlight.h"
 #include "debug.h"
@@ -42,27 +44,221 @@
 #include "preferences.h"
 #include "helpers.h"
 
-static gboolean notifiers_equal (gconstpointer a, gconstpointer b);
-static void notifier_free (gpointer data);
-
-static GConfClient *warlock_gconf_client = NULL;
+static GKeyFile *warlock_key_file = NULL;
+static char *config_path = NULL;
 static Profile *profile = NULL;
-static GHashTable *notifier_data = NULL;
+static GHashTable *notifiers = NULL;    /* connection id -> struct NotifyData */
+static guint next_cnxn = 1;
+static gboolean suppress_save = FALSE;
+static gboolean prefs_dirty = FALSE;
+
+struct NotifyData {
+        guint id;
+        char *key;
+        PreferencesNotifyFunc func;
+        gpointer user_data;
+};
+
+/****
+ * helpers
+ ****/
+
+/* join a directory and a key with a '/' separator */
+static char *concat_key (const char *dir, const char *key)
+{
+        return g_strconcat (dir, "/", key, NULL);
+}
+
+/* split an absolute key into a GKeyFile group (allocated, caller frees) and a
+ * key name (a pointer into the original string) */
+static void split_key (const char *key, char **group, const char **name)
+{
+        const char *slash;
+
+        slash = strrchr (key, '/');
+        if (slash == NULL) {
+                *group = g_strdup ("");
+                *name = key;
+        } else {
+                *group = g_strndup (key, slash - key);
+                *name = slash + 1;
+        }
+}
+
+static void notifier_free (gpointer data)
+{
+        struct NotifyData *notifier = data;
+
+        g_free (notifier->key);
+        g_free (notifier);
+}
+
+/* call every notifier registered for the exact key that changed */
+static void preferences_notify_key (const char *key)
+{
+        GHashTableIter iter;
+        gpointer value;
+        GSList *matched = NULL, *cur;
+
+        if (notifiers == NULL) {
+                return;
+        }
+
+        /* snapshot the matching notifiers first: a callback may add or remove
+         * notifications (e.g. change_index adds/removes highlights) which would
+         * otherwise invalidate the hash table iterator */
+        g_hash_table_iter_init (&iter, notifiers);
+        while (g_hash_table_iter_next (&iter, NULL, &value)) {
+                struct NotifyData *nd = value;
+
+                if (strcmp (nd->key, key) == 0) {
+                        matched = g_slist_prepend (matched, nd);
+                }
+        }
+
+        for (cur = matched; cur != NULL; cur = cur->next) {
+                struct NotifyData *nd = cur->data;
+
+                nd->func (key, nd->user_data);
+        }
+        g_slist_free (matched);
+}
+
+static void preferences_write (void)
+{
+        GError *err = NULL;
+
+        if (!g_key_file_save_to_file (warlock_key_file, config_path, &err)) {
+                g_warning ("Couldn't save preferences to %s: %s", config_path,
+                                err->message);
+                g_error_free (err);
+        }
+}
+
+/* called by every setter; coalesces writes during bulk updates */
+static void preferences_changed (void)
+{
+        prefs_dirty = TRUE;
+        if (!suppress_save) {
+                preferences_write ();
+                prefs_dirty = FALSE;
+        }
+}
+
+static gboolean preferences_has_key (const char *key)
+{
+        char *group;
+        const char *name;
+        gboolean has;
+
+        split_key (key, &group, &name);
+        has = g_key_file_has_key (warlock_key_file, group, name, NULL);
+        g_free (group);
+
+        return has;
+}
+
+/****
+ * default values (previously supplied by the GConf schema)
+ ****/
+
+static void default_int (Preference id, int value)
+{
+        char *key = preferences_get_key (id);
+
+        if (!preferences_has_key (key)) {
+                preferences_set_int (key, value);
+        }
+        g_free (key);
+}
+
+static void default_bool (Preference id, gboolean value)
+{
+        char *key = preferences_get_key (id);
+
+        if (!preferences_has_key (key)) {
+                preferences_set_bool (key, value);
+        }
+        g_free (key);
+}
+
+static void default_string (Preference id, const char *value)
+{
+        char *key = preferences_get_key (id);
+
+        if (!preferences_has_key (key)) {
+                preferences_set_string (key, value);
+        }
+        g_free (key);
+}
+
+static void preferences_set_defaults (void)
+{
+        suppress_save = TRUE;
+
+        default_int (PREF_WINDOW_WIDTH, 800);
+        default_int (PREF_WINDOW_HEIGHT, 600);
+        default_int (PREF_TEXT_BUFFER_SIZE, 1000000);
+        default_int (PREF_COMMAND_SIZE, 3);
+        default_int (PREF_COMMAND_HISTORY_SIZE, 100);
+
+        default_bool (PREF_ECHO, TRUE);
+        default_bool (PREF_AUTO_SNEAK, TRUE);
+        default_bool (PREF_ARRIVAL_VIEW, TRUE);
+
+        default_string (PREF_SCRIPT_PREFIX, ".");
+        default_string (PREF_SCRIPT_PATH, ".warlock/scripts");
+        default_string (PREF_LOG_PATH, ".warlock/logs");
+
+        default_string (PREF_DEFAULT_TEXT_COLOR, "#d3d3d3");
+        default_string (PREF_DEFAULT_BASE_COLOR, "#000000");
+        default_string (PREF_DEFAULT_FONT, "monospace 9");
+        default_string (PREF_TITLE_TEXT_COLOR, "#ffffff");
+        default_string (PREF_MONSTER_TEXT_COLOR, "#ffff00");
+
+        suppress_save = FALSE;
+        if (prefs_dirty) {
+                preferences_write ();
+                prefs_dirty = FALSE;
+        }
+}
 
 void preferences_init (void)
 {
-        warlock_gconf_client = gconf_client_get_default ();
+        GError *err = NULL;
+        char *dir;
 
-        gconf_client_add_dir (warlock_gconf_client, PREFS_PREFIX,
-                        GCONF_CLIENT_PRELOAD_NONE, NULL);
+        config_path = g_build_filename (g_get_user_config_dir (),
+                        "warlock-gtk", "warlock.ini", NULL);
+
+        dir = g_path_get_dirname (config_path);
+        g_mkdir_with_parents (dir, 0700);
+        g_free (dir);
+
+        warlock_key_file = g_key_file_new ();
+        if (!g_key_file_load_from_file (warlock_key_file, config_path,
+                                G_KEY_FILE_KEEP_COMMENTS, &err)) {
+                /* a missing file on first run is expected */
+                if (!g_error_matches (err, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+                        g_warning ("Couldn't load preferences from %s: %s",
+                                        config_path, err->message);
+                }
+                g_clear_error (&err);
+        }
 
         profile = g_new (Profile, 1);
-        profile->name = "Default";
-        profile->path = gconf_concat_dir_and_key (PREFS_PREFIX, profile->name);
+        profile->name = g_strdup ("Default");
+        profile->path = concat_key (PREFS_PREFIX, profile->name);
 
-        notifier_data = g_hash_table_new_full (g_direct_hash, notifiers_equal,
-                        NULL, notifier_free);
+        notifiers = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL,
+                        notifier_free);
+
+        preferences_set_defaults ();
 }
+
+/****
+ * key builders
+ ****/
 
 char *preferences_get_global_key (Preference id)
 {
@@ -75,7 +271,7 @@ char *preferences_get_global_key (Preference id)
 
                 case PREF_PROFILES:
                         key = "profiles";
-                        break; 
+                        break;
                 case PREF_PROFILES_INDEX:
                         key = "profiles/index";
                         break;
@@ -85,7 +281,7 @@ char *preferences_get_global_key (Preference id)
                         return NULL;
         }
 
-        return gconf_concat_dir_and_key (PREFS_PREFIX, key);
+        return concat_key (PREFS_PREFIX, key);
 }
 
 char *preferences_get_key (Preference id)
@@ -222,25 +418,30 @@ char *preferences_get_key (Preference id)
                         return NULL;
         }
 
-        return gconf_concat_dir_and_key (profile->path, key);
+        return concat_key (profile->path, key);
 }
 
 char *
 preferences_get_full_key (const char *key)
 {
-	return gconf_concat_dir_and_key (profile->path, key);
+	return concat_key (profile->path, key);
 }
 
 char *
 preferences_get_window_key (const char *name, const char *key)
 {
-	return gconf_concat_dir_and_key (gconf_concat_dir_and_key
-			(PREFS_WINDOWS_PREFIX, name), key);
+	char *dir, *full;
+
+	dir = concat_key (PREFS_WINDOWS_PREFIX, name);
+	full = concat_key (dir, key);
+	g_free (dir);
+
+	return full;
 }
 
 char *preferences_get_highlight_key (guint highlight_id, Preference pref_id)
 {
-        char *dir;
+        char *dir, *base, *prefix, *full;
         const char *key;
 
         switch (pref_id) {
@@ -258,15 +459,21 @@ char *preferences_get_highlight_key (guint highlight_id, Preference pref_id)
         }
 
         dir = g_strdup_printf ("%06X", highlight_id);
-        return gconf_concat_dir_and_key (gconf_concat_dir_and_key
-                        (preferences_get_key (PREF_HIGHLIGHTS), dir), key);
+        base = preferences_get_key (PREF_HIGHLIGHTS);
+        prefix = concat_key (base, dir);
+        full = concat_key (prefix, key);
+        g_free (base);
+        g_free (dir);
+        g_free (prefix);
+
+        return full;
 }
 
 char *preferences_get_highlight_match_key (guint highlight_id, guint match_id,
                 Preference pref_id)
 {
+        char *dir, *base, *prefix, *full;
         const char *key;
-        char *dir;
 
         switch (pref_id) {
                 case PREF_HIGHLIGHT_MATCH_TEXT_COLOR:
@@ -287,14 +494,20 @@ char *preferences_get_highlight_match_key (guint highlight_id, guint match_id,
         }
 
         dir = g_strdup_printf ("%06X/%d", highlight_id, match_id);
-        return gconf_concat_dir_and_key (gconf_concat_dir_and_key
-                        (preferences_get_key (PREF_HIGHLIGHTS), dir), key);
+        base = preferences_get_key (PREF_HIGHLIGHTS);
+        prefix = concat_key (base, dir);
+        full = concat_key (prefix, key);
+        g_free (base);
+        g_free (dir);
+        g_free (prefix);
+
+        return full;
 }
 
 char *preferences_get_profile_key (guint profile_id, Preference pref_id)
 {
+        char *dir, *base, *prefix, *full;
         const char *key;
-        char *dir;
 
         switch (pref_id) {
                 case PREF_PROFILE_NAME:
@@ -323,122 +536,183 @@ char *preferences_get_profile_key (guint profile_id, Preference pref_id)
         }
 
         dir = g_strdup_printf ("%06X", profile_id);
-        return gconf_concat_dir_and_key (gconf_concat_dir_and_key
-                        (preferences_get_global_key (PREF_PROFILES), dir),
-                        key);
+        base = preferences_get_global_key (PREF_PROFILES);
+        prefix = concat_key (base, dir);
+        full = concat_key (prefix, key);
+        g_free (base);
+        g_free (dir);
+        g_free (prefix);
+
+        return full;
 }
+
+/****
+ * getters / setters
+ ****/
 
 void preferences_set_bool (const char *key, gboolean b)
 {
-        GError *err;
+        char *group;
+        const char *name;
 
-        err = NULL;
-        gconf_client_set_bool (warlock_gconf_client, key, b, &err);
-        print_error (err);
+        split_key (key, &group, &name);
+        g_key_file_set_boolean (warlock_key_file, group, name, b);
+        g_free (group);
+
+        preferences_changed ();
+        preferences_notify_key (key);
 }
 
 gboolean preferences_get_bool (const char *key)
 {
-        GError *err;
+        char *group;
+        const char *name;
         gboolean b;
+        GError *err = NULL;
 
-        err = NULL;
-        b = gconf_client_get_bool (warlock_gconf_client, key, &err);
-        print_gconf_error (err, key);
+        split_key (key, &group, &name);
+        b = g_key_file_get_boolean (warlock_key_file, group, name, &err);
+        g_free (group);
+
+        if (err != NULL) {
+                g_error_free (err);
+                return FALSE;
+        }
 
         return b;
 }
 
 void preferences_set_int (const char *key, gint i)
 {
-        GError *err;
+        char *group;
+        const char *name;
 
-        err = NULL;
-        gconf_client_set_int (warlock_gconf_client, key, i, &err);
-        print_error (err);
+        split_key (key, &group, &name);
+        g_key_file_set_integer (warlock_key_file, group, name, i);
+        g_free (group);
+
+        preferences_changed ();
+        preferences_notify_key (key);
 }
 
 int preferences_get_int (const char *key)
 {
-        GError *err;
+        char *group;
+        const char *name;
         int i;
+        GError *err = NULL;
 
-        err = NULL;
-        i = gconf_client_get_int (warlock_gconf_client, key, &err);
-        print_error (err);
+        split_key (key, &group, &name);
+        i = g_key_file_get_integer (warlock_key_file, group, name, &err);
+        g_free (group);
+
+        if (err != NULL) {
+                g_error_free (err);
+                return 0;
+        }
 
         return i;
 }
 
 void preferences_set_string (const char *key, const char *string)
 {
-        GError *err;
+        char *group;
+        const char *name;
 
         if (string == NULL) {
                 string = "";
         }
 
-        err = NULL;
-        gconf_client_set_string (warlock_gconf_client, key, string, &err);
-        print_error (err);
+        split_key (key, &group, &name);
+        g_key_file_set_string (warlock_key_file, group, name, string);
+        g_free (group);
+
+        preferences_changed ();
+        preferences_notify_key (key);
 }
 
 char *preferences_get_string (const char *key)
 {
-        GError *err;
+        char *group;
+        const char *name;
         char *str;
 
-        err = NULL;
-        str = gconf_client_get_string (warlock_gconf_client, key, &err);
-        print_gconf_error (err, key);
+        split_key (key, &group, &name);
+        str = g_key_file_get_string (warlock_key_file, group, name, NULL);
+        g_free (group);
 
         if (str != NULL && *str == '\0') {
                 g_free (str);
                 return NULL;
-        } else {
-                return str;
         }
+
+        return str;
 }
 
 void preferences_set_list (const char *key, PreferencesValue val, GSList *list)
 {
-        GError *err;
-        int gval;
+        char *group;
+        const char *name;
+        guint len, i;
+        GSList *cur;
 
-        switch (val) {
-                case PREFERENCES_VALUE_INT:
-                        gval = GCONF_VALUE_INT;
-                        break;
+        split_key (key, &group, &name);
+        len = g_slist_length (list);
 
-                case PREFERENCES_VALUE_STRING:
-                        gval = GCONF_VALUE_STRING;
-                        break;
+        if (val == PREFERENCES_VALUE_INT) {
+                gint *arr = g_new (gint, len);
+
+                for (cur = list, i = 0; cur != NULL; cur = cur->next, i++) {
+                        arr[i] = GPOINTER_TO_INT (cur->data);
+                }
+                g_key_file_set_integer_list (warlock_key_file, group, name, arr,
+                                len);
+                g_free (arr);
+        } else {
+                const gchar **arr = g_new (const gchar *, len);
+
+                for (cur = list, i = 0; cur != NULL; cur = cur->next, i++) {
+                        arr[i] = cur->data;
+                }
+                g_key_file_set_string_list (warlock_key_file, group, name,
+                                (const gchar * const *) arr, len);
+                g_free (arr);
         }
 
-        err = NULL;
-        gconf_client_set_list (warlock_gconf_client, key, gval, list, &err);
-        print_error (err);
+        g_free (group);
+
+        preferences_changed ();
+        preferences_notify_key (key);
 }
 
 GSList *preferences_get_list (const char *key, PreferencesValue val)
 {
-        GError *err;
-        GSList *list;
-        int gval;
+        char *group;
+        const char *name;
+        GSList *list = NULL;
+        gsize len = 0, i;
 
-        switch (val) {
-                case PREFERENCES_VALUE_INT:
-                        gval = GCONF_VALUE_INT;
-                        break;
+        split_key (key, &group, &name);
 
-                case PREFERENCES_VALUE_STRING:
-                        gval = GCONF_VALUE_STRING;
-                        break;
+        if (val == PREFERENCES_VALUE_INT) {
+                gint *arr = g_key_file_get_integer_list (warlock_key_file,
+                                group, name, &len, NULL);
+
+                for (i = 0; i < len; i++) {
+                        list = g_slist_append (list, GINT_TO_POINTER (arr[i]));
+                }
+                g_free (arr);
+        } else {
+                gchar **arr = g_key_file_get_string_list (warlock_key_file,
+                                group, name, &len, NULL);
+
+                for (i = 0; i < len; i++) {
+                        list = g_slist_append (list, g_strdup (arr[i]));
+                }
+                g_strfreev (arr);
         }
 
-        err = NULL;
-        list = gconf_client_get_list (warlock_gconf_client, key, gval, &err);
-        print_gconf_error (err, key);
+        g_free (group);
 
         return list;
 }
@@ -466,9 +740,13 @@ GdkRGBA *preferences_get_color (const char *key)
 		return NULL;
 
 	rgba = g_new (GdkRGBA, 1);
-        if (gdk_rgba_parse (rgba, str))
+        if (gdk_rgba_parse (rgba, str)) {
+                g_free (str);
 		return rgba;
+        }
 
+        g_free (str);
+        g_free (rgba);
 	return NULL;
 }
 
@@ -479,6 +757,7 @@ void preferences_set_font (const char *key, const PangoFontDescription *font)
 
                 str = pango_font_description_to_string (font);
                 preferences_set_string (key, str);
+                g_free (str);
         } else {
                 preferences_set_string (key, NULL);
         }
@@ -496,73 +775,44 @@ PangoFontDescription *preferences_get_font (const char *key)
         }
 
         font = pango_font_description_from_string (str);
+        g_free (str);
         return font;
 }
 
-struct NotifyData {
-        gpointer user_data;
-        PreferencesNotifyFunc func;
-        char *key;
-};
-
-static void preferences_notify_function (GConfClient *client, guint cnxn_id,
-                GConfEntry *entry, gpointer user_data)
-{
-        struct NotifyData *ndata;
-
-        ndata = user_data;
-        ndata->func(ndata->key, ndata->user_data);
-}
+/****
+ * change notification
+ ****/
 
 guint preferences_notify_add (const char *key, PreferencesNotifyFunc func,
                 gpointer user_data)
 {
         struct NotifyData *notify;
-        GError *err;
-        guint cnxn;
 
         notify = g_new (struct NotifyData, 1);
-        notify->user_data = user_data;
-        notify->func = func;
+        notify->id = next_cnxn++;
         notify->key = g_strdup (key);
+        notify->func = func;
+        notify->user_data = user_data;
 
-        err = NULL;
-        cnxn = gconf_client_notify_add (warlock_gconf_client, key,
-                        preferences_notify_function, notify, NULL, &err);
-        print_error (err);
+        g_hash_table_insert (notifiers, GUINT_TO_POINTER (notify->id), notify);
 
-        g_hash_table_insert (notifier_data, GINT_TO_POINTER(cnxn), notify);
-
-        return cnxn;
+        return notify->id;
 }
 
 void preferences_notify_remove (guint cnxn)
 {
-        gconf_client_notify_remove (warlock_gconf_client, cnxn);
-}
-
-static gboolean
-notifiers_equal(gconstpointer a, gconstpointer b)
-{
-        return a == b;
-}
-
-static void
-notifier_free (gpointer data)
-{
-        struct NotifyData *notifier;
-
-        notifier = data;
-        g_free(notifier->key);
-        g_free(notifier);
+        g_hash_table_remove (notifiers, GUINT_TO_POINTER (cnxn));
 }
 
 void
 preferences_unset (const char *key)
 {
-        GError *err;
+        char *group;
+        const char *name;
 
-        err = NULL;
-        gconf_client_unset (warlock_gconf_client, key, &err);
-        print_error (err);
+        split_key (key, &group, &name);
+        g_key_file_remove_key (warlock_key_file, group, name, NULL);
+        g_free (group);
+
+        preferences_changed ();
 }

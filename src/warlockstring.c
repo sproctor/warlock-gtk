@@ -24,6 +24,13 @@
 
 #include "warlockstring.h"
 
+static void
+w_highlight_free (WHighlight *highlight)
+{
+        g_free (highlight->tag_name);
+        g_free (highlight);
+}
+
 WString *w_string_new (const char *string)
 {
         WString *w_string;
@@ -70,7 +77,7 @@ WString *w_string_add_tag (WString *w_string, const char *tag_name,
 
 	highlight = g_new (WHighlight, 1);
 
-        highlight->tag_name = tag_name;
+        highlight->tag_name = g_strdup (tag_name);
         highlight->offset = start_offset;
         highlight->length = end_offset - start_offset;
 
@@ -85,14 +92,14 @@ void w_string_free (WString *w_string, gboolean free_string)
 		return;
 
         g_string_free (w_string->string, free_string);
-        // if not using libgc, free elements of the highlights list here
-        g_list_free (w_string->highlights);
+        g_list_free_full (w_string->highlights, (GDestroyNotify) w_highlight_free);
         g_free (w_string);
 }
 
 WString *w_string_dup (const WString *w_string)
 {
         WString *new_string;
+        GList *current;
 
 	if (w_string == NULL) {
 		return NULL;
@@ -101,7 +108,20 @@ WString *w_string_dup (const WString *w_string)
         new_string = g_new (WString, 1);
 
         new_string->string = g_string_new (w_string->string->str);
-        new_string->highlights = g_list_copy (w_string->highlights);
+        new_string->highlights = NULL;
+
+        /* deep copy: each WString owns its own highlight elements */
+        for (current = w_string->highlights; current != NULL;
+                        current = current->next) {
+                WHighlight *src = current->data;
+                WHighlight *copy = g_new (WHighlight, 1);
+
+                copy->tag_name = g_strdup (src->tag_name);
+                copy->offset = src->offset;
+                copy->length = src->length;
+                new_string->highlights = g_list_append (new_string->highlights,
+                                copy);
+        }
 
         return new_string;
 }

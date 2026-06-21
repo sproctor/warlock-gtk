@@ -20,7 +20,7 @@
 #define _WARLOCKSTRING_H
 
 typedef struct {
-        const char *tag_name;
+        char *tag_name;
         int offset;
         int length;
 } WHighlight;

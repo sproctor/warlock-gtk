@@ -129,8 +129,10 @@ void warlock_time_init (void)
         time_label = warlock_get_widget ("time_label");
 
         timer = g_timer_new ();
-        timer_mutex = g_mutex_new ();
-        timer_cond = g_cond_new ();
+        timer_mutex = g_new0 (GMutex, 1);
+        g_mutex_init (timer_mutex);
+        timer_cond = g_new0 (GCond, 1);
+        g_cond_init (timer_cond);
         gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (rt_bar), 0.0);
         g_timeout_add(100, update_time, NULL);
 }

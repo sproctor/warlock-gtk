@@ -185,8 +185,8 @@ on_save_history_as_activate (GtkMenuItem *menuitem, gpointer user_data)
 	dialog = gtk_file_chooser_dialog_new ("Save File", GTK_WINDOW
 			(warlock_get_widget ("main_window")),
 			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			"_Cancel", GTK_RESPONSE_CANCEL,
+			"_Save", GTK_RESPONSE_ACCEPT,
 			NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER
 			(dialog), TRUE);

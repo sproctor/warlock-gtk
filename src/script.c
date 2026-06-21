@@ -28,8 +28,6 @@
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
 
-#include <pcre.h>
-
 #include "script.h"
 #include "warlock.h"
 #include "warlockview.h"
@@ -54,8 +52,7 @@ typedef void (*ScriptFunc) (GList *args);
 typedef struct {
 	char *string;
 	char *label;
-        pcre *regex;
-        pcre_extra *regex_extra;
+        GRegex *regex;
 } MatchData;
 
 /* local function definitions */
@@ -153,11 +150,15 @@ static gboolean prompt_since_put = FALSE;
 void
 script_init (void)
 {
-        script_mutex = g_mutex_new ();
+        script_mutex = g_new0 (GMutex, 1);
+        g_mutex_init (script_mutex);
 
-	move_cond = g_cond_new ();
-	wait_cond = g_cond_new ();
-        suspend_cond = g_cond_new ();
+	move_cond = g_new0 (GCond, 1);
+	g_cond_init (move_cond);
+	wait_cond = g_new0 (GCond, 1);
+	g_cond_init (wait_cond);
+        suspend_cond = g_new0 (GCond, 1);
+        g_cond_init (suspend_cond);
         script_line_queue = g_async_queue_new ();
 }
 
@@ -171,7 +172,7 @@ script_kill (void)
 }
 
 /* suspend or resume the script depending on the current state
- * must be called from inside gdk_threads
+ * must be called from the main thread
  */
 void
 script_toggle_suspend (void)
@@ -229,7 +230,7 @@ script_load (const char *filename, int argc, const char **argv)
         
 	echo_f ("*** Script Started: %s ***\n", filename);
 
-	g_thread_create (script_run, contents, TRUE, NULL);
+	g_thread_unref (g_thread_new ("warlock-script", script_run, contents));
 }
 
 /* called externally only, lets us match against a string */
@@ -444,12 +445,12 @@ script_command_call (ScriptCommand *command)
 {
 	char *command_name;
 	char *command_string;
+	char *raw;
 	int i;
-	int matches;
-	int pmatch[6]; // only allow 2 matches (6 / 3)
-	static pcre *command_regexp = NULL;
-	static pcre *args_regexp = NULL;
-	int len;
+	gint cmd_end;
+	static GRegex *command_regexp = NULL;
+	static GRegex *args_regexp = NULL;
+	GMatchInfo *match_info;
 	GList *args;
 	GList *curr_condition;
 
@@ -471,65 +472,72 @@ script_command_call (ScriptCommand *command)
 	}
 
 	command_string = script_list_to_string (command->command);
-	len = strlen (command_string);
 
 	/* compile the command name regexp if we haven't done it yet */
 	if (command_regexp == NULL) {
-		const char *err;
-		int offset;
+		GError *err = NULL;
 
-		command_regexp = pcre_compile ("^([^[:blank:]]+)[[:blank:]]*",
-				0, &err, &offset, NULL);
+		command_regexp = g_regex_new ("^([^[:blank:]]+)[[:blank:]]*",
+				0, 0, &err);
 		if (command_regexp == NULL) {
 			// TODO change the following into a dialog
-			g_warning ("Error compiling command_regexp at character"
-					" %d: %s\n", offset, err);
+			g_warning ("Error compiling command_regexp: %s\n",
+					err->message);
+			g_error_free (err);
 			return;
 		}
         }
 
 	/* match out the command name */
-	matches = pcre_exec (command_regexp, NULL, command_string, len, 0, 0,
-			pmatch, 6);
-	if (matches <= 1) {
+	if (!g_regex_match (command_regexp, command_string, 0, &match_info)) {
 		g_warning ("Error: no command found\n");
+		g_match_info_free (match_info);
 		return;
 	}
 
-	command_name = g_ascii_strdown (command_string + pmatch[2],
-			pmatch[3] - pmatch[2]);
+	raw = g_match_info_fetch (match_info, 1);
+	command_name = g_ascii_strdown (raw, -1);
+	g_free (raw);
+	/* args begin just past the whole command-name match (incl. blanks) */
+	g_match_info_fetch_pos (match_info, 0, NULL, &cmd_end);
+	g_match_info_free (match_info);
 
 	/* compile the args regexp if we haven't done it yet */
 	if (args_regexp == NULL) {
-		const char *err;
-		int offset;
+		GError *err = NULL;
 
-		args_regexp = pcre_compile ("([^[:blank:]]+[[:blank:]]*)", 0,
-				&err, &offset, NULL);
+		args_regexp = g_regex_new ("([^[:blank:]]+[[:blank:]]*)", 0, 0,
+				&err);
 		if (args_regexp == NULL) {
 			// TODO change the following into a dialog
-			g_warning ("Error compiling args_regexp at character"
-					" %d: %s\n", offset, err);
+			g_warning ("Error compiling args_regexp: %s\n",
+					err->message);
+			g_error_free (err);
 			return;
 		}
 	}
 
 	/* create the argument list */
 	args = NULL;
-	while ((matches = pcre_exec (args_regexp, NULL, command_string, len,
-					pmatch[1], 0, pmatch, 6)) > 0) {
+	g_regex_match_full (args_regexp, command_string, -1, cmd_end, 0,
+			&match_info, NULL);
+	while (g_match_info_matches (match_info)) {
 		ScriptData *data;
-		data = string_to_script_data (g_ascii_strdown (command_string
-					+ pmatch[2], pmatch[3] - pmatch[2]));
+		char *tok = g_match_info_fetch (match_info, 1);
+		data = string_to_script_data (g_ascii_strdown (tok, -1));
+		g_free (tok);
 		args = g_list_append (args, data);
+		g_match_info_next (match_info, NULL);
 	}
+	g_match_info_free (match_info);
 					
 	/* lookup and call the function */
 	for (i = 0; predefined_functions[i].name != NULL; i++) {
 		if (strcmp (predefined_functions[i].name, command_name)
 				== 0) {
-			/* any calls to interface functions, etc need to be
-			 * surrounded by gdk_threads_enter and _leave macros
+			/* these run on the script thread, so any UI work they
+			 * do must be marshalled to the main loop (see echo()
+			 * and warlock_send())
 			 */
 			if (predefined_functions[i].func != NULL) {
 				predefined_functions[i].func (args);
@@ -586,10 +594,8 @@ script_parse (char *position)
 		if (script_running && scriptparse (&command, &label,
 					line_number) != 0)
 		{
-			gdk_threads_enter ();
 			echo_f ("*** Parse error in script at line: %d ***\n",
 					line_number);
-			gdk_threads_leave ();
 			script_running = FALSE;
 			break;
 		}
@@ -661,9 +667,7 @@ script_run (gpointer data)
 	g_list_free (commands);
 	commands = NULL;
 
-	gdk_threads_enter ();
 	echo ("*** Script Finished ***\n");
-	gdk_threads_leave ();
 
         debug ("Script ended\n");
 	return NULL;
@@ -804,10 +808,8 @@ script_error (const char *fmt, ...)
 	g_vasprintf (&str, fmt, list);
 	va_end (list);
 
-	gdk_threads_enter ();
 	echo_f ("*** Error in script at line %d: %s ***\n",
 			((ScriptCommand*)curr_command->data)->line_number, str);
-	gdk_threads_leave ();
 
 	g_free (str);
 }
@@ -825,10 +827,8 @@ script_warn (const char *fmt, ...)
 	g_vasprintf (&str, fmt, list);
 	va_end (list);
 
-	gdk_threads_enter ();
 	echo_f ("*** Warning in script at line %d: %s ***\n",
 			((ScriptCommand*)curr_command->data)->line_number, str);
-	gdk_threads_leave ();
 
 	g_free (str);
 }
@@ -936,7 +936,6 @@ script_match (GList *args)
 	if (match_list == NULL) clear_line_queue ();
 
         match_data->regex = NULL;
-        match_data->regex_extra = NULL;
 	match_list = g_list_append (match_list, match_data);
 	g_mutex_unlock (script_mutex);
 }
@@ -947,24 +946,18 @@ static void
 script_matchre (GList *args)
 {
 	MatchData *match_data;
-        const char *err;
-        int err_offset;
+        GError *err = NULL;
 
 	match_data = g_new (MatchData, 1);
 
 	match_data->label = script_data_to_string (args->data);
 	match_data->string = script_list_to_string (args->next);
 
-        err = NULL;
-        match_data->regex = pcre_compile (match_data->string, 0, &err,
-                        &err_offset, NULL);
-        if (err != NULL) {
+        match_data->regex = g_regex_new (match_data->string, G_REGEX_OPTIMIZE,
+                        0, &err);
+        if (match_data->regex == NULL) {
                 script_error ("Invalid regex");
-		return;
-        }
-        match_data->regex_extra = pcre_study (match_data->regex, 0, &err);
-        if (err != NULL) {
-                script_error ("Invalid regex");
+                g_error_free (err);
 		return;
         }
 	g_mutex_lock (script_mutex);
@@ -974,26 +967,26 @@ script_matchre (GList *args)
 
 /* match a line against a regexp */
 static gboolean
-regexp_match (pcre *regex, pcre_extra *regex_extra, char *line)
+regexp_match (GRegex *regex, char *line)
 {
-	int n_matches;
-	int matches[32 * 3];
+	GMatchInfo *match_info;
 
-	n_matches = pcre_exec (regex, regex_extra, line, strlen (line), 0, 0,
-			matches, 32 * 3);
-	if (n_matches >= 0) {
-		int i;
-		for (i = 0; i <= n_matches; i++) {
+	if (g_regex_match (regex, line, 0, &match_info)) {
+		gint count, i;
+
+		count = g_match_info_get_match_count (match_info);
+		for (i = 0; i < count; i++) {
 			char name[10];
 			ScriptData *data;
 			g_snprintf (name, 10, "match%d", i);
-			data = string_to_script_data (g_strndup (
-						line + matches[i * 2],
-						matches[i * 2 + 1]));
+			data = string_to_script_data (
+					g_match_info_fetch (match_info, i));
 			script_variable_set (name, data);
 		}
+		g_match_info_free (match_info);
 		return TRUE;
 	}
+	g_match_info_free (match_info);
 	return FALSE;
 }
 
@@ -1029,9 +1022,7 @@ script_matchwait (GList *args)
                                         break;
                                 }
                         } else {
-				if (regexp_match (match_data->regex,
-							match_data->regex_extra,
-							line)) {
+				if (regexp_match (match_data->regex, line)) {
                                         goto_label (match_data->label);
                                         g_list_free (match_list);
                                         match_list = NULL;
@@ -1076,25 +1067,18 @@ script_waitfor (GList *args)
 static void
 script_waitforre (GList *args)
 {
-	pcre *regex;
-	pcre_extra *regex_extra;
+	GRegex *regex;
 	char *str;
         char *line;
-        const char *err;
-        int err_offset;
+        GError *err = NULL;
 
 	str = g_strstrip (g_ascii_strdown (script_list_to_string (args), -1));
 	debug ("waitforre regex: %s\n", str);
 
-        err = NULL;
-        regex = pcre_compile (str, 0, &err, &err_offset, NULL);
-        if (err != NULL) {
+        regex = g_regex_new (str, G_REGEX_OPTIMIZE, 0, &err);
+        if (regex == NULL) {
                 script_error ("Invalid regex");
-		return;
-        }
-        regex_extra = pcre_study (regex, 0, &err);
-        if (err != NULL) {
-                script_error ("Invalid regex");
+                g_error_free (err);
 		return;
         }
 
@@ -1105,10 +1089,12 @@ script_waitforre (GList *args)
 	/* we get woken up to check each string */
         do {
                 line = get_line ();
-        } while (line != NULL && !regexp_match (regex, regex_extra, line));
+        } while (line != NULL && !regexp_match (regex, line));
+
+        g_regex_unref (regex);
 
         // wait for the roundtime to end
-	warlock_roundtime_wait (&script_running);	
+	warlock_roundtime_wait (&script_running);
 }
 
 /* manipulate the %c variable (set,add,subtract,multiply,divide) */
@@ -1169,9 +1155,7 @@ script_put (GList *args)
 	prompt_since_put = FALSE;
 	g_mutex_unlock (script_mutex);
 
-	gdk_threads_enter ();
 	warlock_send ("%s", script_list_to_string (args));
-	gdk_threads_leave ();
 }
 
 /* position the running script at label */
@@ -1192,11 +1176,8 @@ script_goto (GList *args)
 static void
 script_move (GList *args)
 {
-	// Always acquire the gdk thread before the script_mutex
-	gdk_threads_enter ();
 	g_mutex_lock (script_mutex);
 	warlock_send ("%s", script_list_to_string (args));
-	gdk_threads_leave ();
 
         next_room_wait (script_mutex);
 	g_mutex_unlock (script_mutex);
@@ -1227,9 +1208,7 @@ script_pause (GList *args)
 static void
 script_echo (GList *args)
 {
-	gdk_threads_enter ();
 	echo_f ("%s\n", script_list_to_string (args));
-	gdk_threads_leave ();
 }
 
 /* wait for a status prompt */

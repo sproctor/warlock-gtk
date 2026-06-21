@@ -297,7 +297,7 @@ static void create_macro_grab_dialog (char *key)
         dialog = gtk_dialog_new_with_buttons (_("Macro Key"),
                         GTK_WINDOW (warlock_get_widget ("main_window")),
                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                        "_Cancel", GTK_RESPONSE_CANCEL,
                         NULL);
         g_signal_connect (dialog, "key_press_event", G_CALLBACK (grab_keys),
                         key);

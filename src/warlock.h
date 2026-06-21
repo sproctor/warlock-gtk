@@ -32,6 +32,8 @@ enum {
 	RIGHT_HAND
 };
 
+extern GtkApplication *warlock_app;
+
 void warlock_exit (void);
 void warlock_disconnect (void);
 void warlock_send (const char *fmt, ...);

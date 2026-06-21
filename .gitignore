@@ -1,16 +1,16 @@
-# Compiled files
+# Meson build directories
+/build/
+/_build/
+/_install/
+
+# Generated scanners / parser (produced by flex/bison at build time)
+src/script_lexer.c
+src/script_lexer.h
+src/script_parser.c
+src/script_parser.h
+src/wizard_protocol_lexer.c
+
+# Compiled / editor files
 *.o
-src/warlock
-
-# Build files
-Makefile
-.deps
 *~
-autom4te.cache
-config.h*
-*.log
-config.status
-stamp-h1
-
-# Vim temporary files
 *.swp

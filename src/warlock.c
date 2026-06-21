@@ -58,11 +58,31 @@ extern char *key;
 extern int port;
 
 /* global variables */
+GtkApplication *warlock_app = NULL;
 SimuConnection *connection = NULL;
 gchar *drag_obj = NULL;
 
 /* local variables */
 static gboolean warlock_quit = FALSE;
+
+/* runs on the main loop; takes ownership of to_send */
+static gboolean
+warlock_send_main (gpointer data)
+{
+        char *to_send = data;
+
+        if (preferences_get_bool (preferences_get_key (PREF_ECHO))) {
+                echo (to_send);
+        }
+
+	if (connection != NULL) {
+		simu_connection_send (connection, to_send);
+	}
+
+        g_free (to_send);
+
+        return G_SOURCE_REMOVE;
+}
 
 void warlock_send (const char *fmt, ...)
 {
@@ -79,15 +99,9 @@ void warlock_send (const char *fmt, ...)
         to_send = g_strconcat (string, "\n", NULL);
         g_free (string);
 
-        if (preferences_get_bool (preferences_get_key (PREF_ECHO))) {
-                echo (to_send);
-        }
-
-	if (connection != NULL) {
-		simu_connection_send (connection, to_send);
-	}
-
-        g_free (to_send);
+        /* may be called from the script thread; do the echo + socket write on
+         * the main loop (runs directly when already on the main thread) */
+        g_main_context_invoke (NULL, warlock_send_main, to_send);
 }
 
 void
@@ -100,11 +114,24 @@ warlock_disconnect (void)
         }
 }
 
-/* must be called from within gdk threads context */
 void
 warlock_exit (void)
 {
+        GtkWidget *main_window;
+
         debug ("exiting warlock\n");
+
+        /* save the window geometry while the window still exists */
+        main_window = warlock_get_widget ("main_window");
+        if (main_window != NULL) {
+                int width, height;
+
+                gtk_window_get_size (GTK_WINDOW (main_window), &width, &height);
+                preferences_set_int (preferences_get_key (PREF_WINDOW_WIDTH),
+                                width);
+                preferences_set_int (preferences_get_key (PREF_WINDOW_HEIGHT),
+                                height);
+        }
 
         warlock_quit = TRUE;
         if (connection != NULL) {
@@ -112,7 +139,9 @@ warlock_exit (void)
                 warlock_disconnect ();
         } else {
                 debug ("quit now!\n");
-                gtk_main_quit ();
+                if (warlock_app != NULL) {
+                        g_application_quit (G_APPLICATION (warlock_app));
+                }
         }
 }
 
@@ -147,8 +176,6 @@ void warlock_init (void)
 static void
 handle_quit (SimuQuit reason, GError *err, gpointer data)
 {
-        gdk_threads_enter ();
-
         debug ("handle quit was called\n");
         switch (reason) {
                 case SIMU_EOF:
@@ -180,8 +207,6 @@ handle_quit (SimuQuit reason, GError *err, gpointer data)
         if (warlock_quit) {
 		warlock_exit ();
         }
-
-        gdk_threads_leave ();
 }
 
 static gboolean
@@ -189,10 +214,8 @@ handle_line (gchar *string, gpointer data)
 {
         int result;
 
-        gdk_threads_enter ();
         wizard_scan_string (string);
         result = wizardparse();
-        gdk_threads_leave ();
 
         switch (result) {
                 case 0:
@@ -221,10 +244,8 @@ handle_init (gpointer data)
 	simu_connection_send (connection, g_strdup_printf("%s\n", key));
 	simu_connection_send (connection, "/FE:WIZARD\n");
 
-        gdk_threads_enter ();
         dialog = data;
 	gtk_widget_hide (dialog);
-        gdk_threads_leave ();
 }
 
 void warlock_connection_init (void)

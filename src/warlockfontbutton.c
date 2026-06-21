@@ -65,7 +65,7 @@ warlock_font_button_get_type (void)
 			NULL
                 };
 
-                wcb_type = g_type_register_static (GTK_TYPE_HBOX,
+                wcb_type = g_type_register_static (GTK_TYPE_BOX,
                                 "warlock_font_button",
                                 &wcb_info,
                                 0);
@@ -149,10 +149,11 @@ static void
 warlock_font_button_font_changed (GtkFontButton *fontbutton,
                 WarlockFontButton *button)
 {
-        const char *font_name;
+        char *font_name;
 
-        font_name = gtk_font_button_get_font_name (fontbutton);
+        font_name = gtk_font_chooser_get_font (GTK_FONT_CHOOSER (fontbutton));
         warlock_font_button_set_font_name (button, font_name);
+        g_free (font_name);
 
         g_signal_emit (G_OBJECT (button),
                         warlock_font_button_signals[FONT_SET_SIGNAL], 0);
@@ -191,6 +192,9 @@ warlock_font_button_class_init (WarlockFontButtonClass *klass)
 static void
 warlock_font_button_init (WarlockFontButton *button)
 {
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (button),
+                        GTK_ORIENTATION_HORIZONTAL);
+
         button->check_button = gtk_check_button_new ();
         button->font_button = gtk_font_button_new ();
         button->active = FALSE;
@@ -225,7 +229,7 @@ warlock_font_button_set_font_name_real (WarlockFontButton *button,
         button->font = g_strdup (font);
         g_signal_handlers_block_matched (G_OBJECT (button->font_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);
-        gtk_font_button_set_font_name (GTK_FONT_BUTTON (button->font_button),
+        gtk_font_chooser_set_font (GTK_FONT_CHOOSER (button->font_button),
                         font);
         g_signal_handlers_unblock_matched (G_OBJECT (button->font_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);
