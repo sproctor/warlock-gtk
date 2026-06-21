@@ -19,18 +19,15 @@ Scripting
 ----------
 
 We support two types of scripting. We have near 100% compatibility with Wizard
-script (but no plans to support Stormfront scripts), and we have our own
-Python scripting engine. If you are writing a script from scratch, I recommend
-you use the Python option. If you find any problems with out Wizard script
-compatibility, please let us know.
+script (but no plans to support Stormfront scripts). If you find any problems
+with out Wizard script compatibility, please let us know.
 
 Highlights
 -----------
 
 Our highlights are much more powerful than highlights in the Wizard. They are
 regex based. The string you enter is a Perl-compatible regex. Please view
-man 3 pcrepattern for more details on creating patterns (You must have libpcre
-installed to use our program, so this man page should also be installed).
+man 3 pcrepattern for more details on creating patterns.
 
 Using Patterns in Our System
 
@@ -50,8 +47,6 @@ when it was preceded by "field". To do this I would create the pattern
 wanted the word "goblin" to appear in green). The parentheses tell the regex
 parser that the contents are a match. The row labeled "1" is the first such
 match. The row labeled "2" is the second, etc.
-
-Python Scripting
 -----------------
 
 Your python scripts are executed by the python interpreter as normal python
