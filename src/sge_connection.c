@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <glib.h>
-#include <gdk/gdk.h>
 
 #include "simu_connection.h"
 #include "sge_connection.h"
@@ -143,19 +142,13 @@ static gboolean sge_handle_line (char *str, gpointer user_data)
                                 g_free (to_send);
                         } else if (input[2] != NULL && strcmp (input[2],
                                                 "PASSWORD") == 0) {
-                                gdk_threads_enter ();
                                 data->func (SGE_BAD_PASSWORD, NULL);
-                                gdk_threads_leave ();
                         } else if (input[2] != NULL && strcmp (input[2],
                                                 "NORECORD") == 0) {
-                                gdk_threads_enter ();
                                 data->func (SGE_INVALID_ACCOUNT, NULL);
-                                gdk_threads_leave ();
                         } else if (input[2] != NULL && strcmp (input[2],
                                                 "REJECT") == 0) {
-                                gdk_threads_enter ();
                                 data->func (SGE_BAD_ACCOUNT, NULL);
-                                gdk_threads_leave ();
                         } else {
                                 g_printerr ("Input string: %s", str);
                                 g_assert_not_reached ();
@@ -165,9 +158,7 @@ static gboolean sge_handle_line (char *str, gpointer user_data)
 
                 case 'M': // we got a game menu, let the client know.
                         list = parse_M (input + 1, data);
-                        gdk_threads_enter ();
                         data->func (SGE_MENU, list);
-                        gdk_threads_leave ();
                         g_slist_free (list);
                         rv = TRUE;
                         break;
@@ -180,18 +171,14 @@ static gboolean sge_handle_line (char *str, gpointer user_data)
                         
                 case 'C': // we got a list of characters, let the client know
                         list = parse_C (input + 1, data);
-                        gdk_threads_enter ();
                         data->func (SGE_CHARACTERS, list);
-                        gdk_threads_leave ();
                         g_slist_free (list);
                         rv = TRUE;
                         break;
                         
                 case 'L': // we got the rest of the data to load the game
                         parse_L (input + 1);
-                        gdk_threads_enter ();
                         data->func (SGE_LOAD, NULL);
-                        gdk_threads_leave ();
                         rv = FALSE;
                         break;
 

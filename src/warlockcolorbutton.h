@@ -38,7 +38,7 @@ typedef struct _WarlockColorButton      WarlockColorButton;
 typedef struct _WarlockColorButtonClass WarlockColorButtonClass;
 
 struct _WarlockColorButton {
-        GtkHBox         box;
+        GtkBox          box;
 
         gboolean        active;
         GdkRGBA*	color;
@@ -47,7 +47,7 @@ struct _WarlockColorButton {
 };
 
 struct _WarlockColorButtonClass {
-        GtkHBoxClass parent_class;
+        GtkBoxClass parent_class;
 
         void (* warlock_color_button) (WarlockColorButton *wcb);
 };

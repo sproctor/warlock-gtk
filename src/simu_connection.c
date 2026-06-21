@@ -89,62 +89,6 @@ simu_connection_send (SimuConnection *conn, char *to_send)
         return written;
 }
 
-static gboolean
-handle_server_data (SimuConnection *conn)
-{
-        gchar *string = NULL;
-        GError *err;
-        GIOStatus status;
-        gboolean rv;
-
-        g_return_val_if_fail (conn->channel != NULL, FALSE);
-
-        err = NULL;
-        status = g_io_channel_read_line (conn->channel, &string, NULL,
-                        NULL, &err);
-
-        switch (status) {
-                case G_IO_STATUS_NORMAL:
-                        g_assert (err == NULL);
-
-                        debug ("got this string: %s", string);
-
-                        if (conn->line_handler != NULL) {
-                                rv = conn->line_handler (string,
-                                                conn->line_data);
-                        } else {
-                                rv = TRUE;
-                        }
-
-                        g_free (string);
-
-                        return rv;
-
-                case G_IO_STATUS_AGAIN:
-                        g_warning ("Got status AGAIN from server. Ignoring.");
-                        print_error (err);
-                        return TRUE;
-
-                case G_IO_STATUS_EOF:
-                        debug ("got an EOF; line: %s\n", string);
-                        print_error (err);
-                        conn->quit_status = SIMU_EOF;
-
-                        return FALSE;
-
-                case G_IO_STATUS_ERROR:
-                        debug ("got a connection error\n");
-                        conn->quit_status = SIMU_ERROR;
-                        conn->error = err;
-
-                        return FALSE;
-
-                default:
-                        g_assert_not_reached ();
-                        return FALSE;
-        }
-}
-
 void
 simu_connection_shutdown (SimuConnection *conn)
 {
@@ -160,25 +104,98 @@ simu_connection_shutdown (SimuConnection *conn)
         conn->channel = NULL;
 }
 
-static gpointer
-input_loop (gpointer user_data)
+/* Reads and dispatches every complete line currently buffered, then waits for
+ * more.  Runs on the main loop, so the line handler (which touches the UI) runs
+ * on the main thread - no GDK locking required.  Returns G_SOURCE_REMOVE and
+ * tears the connection down once it ends. */
+static gboolean
+handle_server_data (GIOChannel *source, GIOCondition condition,
+                gpointer user_data)
 {
-        SimuConnection *conn;
+        SimuConnection *conn = user_data;
+        gboolean ended = FALSE;
 
-        conn = user_data;
-        while (handle_server_data (conn))
-                ;
+        do {
+                gchar *string = NULL;
+                GError *err = NULL;
+                GIOStatus status;
+
+                status = g_io_channel_read_line (conn->channel, &string, NULL,
+                                NULL, &err);
+
+                switch (status) {
+                        case G_IO_STATUS_NORMAL:
+                                debug ("got this string: %s", string);
+                                if (conn->line_handler != NULL
+                                                && !conn->line_handler (string,
+                                                        conn->line_data)) {
+                                        ended = TRUE;
+                                }
+                                g_free (string);
+                                break;
+
+                        case G_IO_STATUS_AGAIN:
+                                /* no complete line buffered yet; wait for the
+                                 * watch to fire again */
+                                g_free (string);
+                                return G_SOURCE_CONTINUE;
+
+                        case G_IO_STATUS_EOF:
+                                debug ("got an EOF\n");
+                                conn->quit_status = SIMU_EOF;
+                                ended = TRUE;
+                                break;
+
+                        case G_IO_STATUS_ERROR:
+                                debug ("got a connection error\n");
+                                conn->quit_status = SIMU_ERROR;
+                                conn->error = err;
+                                ended = TRUE;
+                                break;
+
+                        default:
+                                g_assert_not_reached ();
+                }
+        } while (!ended);
 
         debug ("leaving input loop\n");
+        conn->watch_id = 0;
         simu_connection_shutdown (conn);
         if (conn->quit_handler != NULL) {
                 conn->quit_handler (conn->quit_status, conn->error,
                                 conn->quit_data);
         }
 
-        return NULL;
+        return G_SOURCE_REMOVE;
 }
 
+/* Runs on the main loop once the connect thread finishes.  Either the channel
+ * is up (start watching it) or the connection failed (notify via quit). */
+static gboolean
+connection_established (gpointer user_data)
+{
+        SimuConnection *conn = user_data;
+
+        if (conn->channel == NULL) {
+                if (conn->quit_handler != NULL) {
+                        conn->quit_handler (conn->quit_status, conn->error,
+                                        conn->quit_data);
+                }
+                return G_SOURCE_REMOVE;
+        }
+
+        if (conn->init_func != NULL) {
+                conn->init_func (conn->init_data);
+        }
+
+        conn->watch_id = g_io_add_watch (conn->channel,
+                        G_IO_IN | G_IO_HUP | G_IO_ERR, handle_server_data, conn);
+
+        return G_SOURCE_REMOVE;
+}
+
+/* Does the blocking DNS lookup and connect off the main thread, then hands the
+ * channel back to the main loop. */
 static gpointer
 init_connect (gpointer user_data)
 {
@@ -199,12 +216,16 @@ init_connect (gpointer user_data)
         sock = socket (AF_INET, SOCK_STREAM, 0);
 	if (sock == -1) {
 		g_warning ("Could not open socket.\n");
+                conn->quit_status = SIMU_ERROR;
+                g_idle_add (connection_established, conn);
 		return NULL;
 	}
 
         host = gethostbyname (conn->server);
 	if (host == NULL) {
 		g_warning ("Could not lookup hostname\n");
+                conn->quit_status = SIMU_ERROR;
+                g_idle_add (connection_established, conn);
 		return NULL;
 	}
 
@@ -220,9 +241,10 @@ init_connect (gpointer user_data)
 #else
                 close (sock);
 #endif
-                // FIXME: handle this case more gracefully
                 g_warning ("Couldn't open connection to server. "
                                 "Check your internet connection.");
+                conn->quit_status = SIMU_ERROR;
+                g_idle_add (connection_established, conn);
 		return NULL;
         }
 
@@ -233,12 +255,10 @@ init_connect (gpointer user_data)
 #endif
 
         g_io_channel_set_encoding (conn->channel, NULL, NULL);
+        /* non-blocking so the main-loop read never stalls the UI */
+        g_io_channel_set_flags (conn->channel, G_IO_FLAG_NONBLOCK, NULL);
 
-        if (conn->init_func != NULL) {
-                conn->init_func (conn->init_data);
-        }
-
-        conn->thread = g_thread_create (input_loop, conn, TRUE, NULL);
+        g_idle_add (connection_established, conn);
 
 	return NULL;
 }
@@ -253,8 +273,6 @@ simu_connection_init (const char *server, int port,
 {
 	SimuConnection *conn = g_new (SimuConnection, 1);
 
-        if (!g_thread_supported ()) g_thread_init (NULL);
-
 	conn->server = server;
 	conn->port = port;
 	conn->init_func = init_func;
@@ -267,8 +285,10 @@ simu_connection_init (const char *server, int port,
 
         conn->channel = NULL;
         conn->thread = NULL;
+        conn->watch_id = 0;
+        conn->error = NULL;
 
-	g_thread_create (init_connect, (gpointer)conn, FALSE, NULL);
+	g_thread_unref (g_thread_new ("warlock-connect", init_connect, conn));
 
         return conn;
 }

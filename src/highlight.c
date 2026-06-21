@@ -21,7 +21,6 @@
 #endif
 
 #include <stdlib.h>
-#include <pcre.h>
 #include <string.h>
 
 #include <gtk/gtk.h>
@@ -42,8 +41,8 @@ typedef struct _WarlockHighlight WarlockHighlight;
 
 struct _WarlockHighlight {
         guint id;
-        pcre *regex;
-        GSList *gconf_connections;
+        GRegex *regex;
+        GSList *notify_connections;
 };
 
 static GSList *highlight_list = NULL;
@@ -126,36 +125,38 @@ static void highlight_add_tag (const char *name, const GdkRGBA *text,
 }
 
 static void highlight_match_one (WString *w_string, int id,
-                const pcre *regex)
+                const GRegex *regex)
 {
-        int pmatch[HIGHLIGHT_MATCHES * 3];
-        int matches;
-        guint i, offset;
+        GMatchInfo *match_info;
 
-        offset = 0;
-        while ((matches = pcre_exec (regex, NULL, w_string->string->str,
-                                        (int)w_string->string->len, offset, 0,
-                                        pmatch, HIGHLIGHT_MATCHES * 3)) > 0) {
+        g_regex_match_full (regex, w_string->string->str,
+                        w_string->string->len, 0, 0, &match_info, NULL);
 
-                for (i = 0; i < matches; i++) {
-			char *tag_name = mangle_name (id, i);
-			if (gtk_text_tag_table_lookup (highlight_tag_table,
-						tag_name)) {
-                                // Make sure the match is valid
-                                if (pmatch[i * 2] == -1
-                                                || pmatch[i * 2 + 1] == -1) {
-                                        g_assert (pmatch[i * 2]
-                                                        == pmatch[i * 2 + 1]);
-                                } else {
-                                        w_string_add_tag (w_string, tag_name,
-                                                        pmatch[i * 2],
-                                                        pmatch[i * 2 + 1]);
-                                }
-			}
+        while (g_match_info_matches (match_info)) {
+                gint count, i;
+
+                count = g_match_info_get_match_count (match_info);
+                for (i = 0; i < count && i < HIGHLIGHT_MATCHES; i++) {
+                        char *tag_name;
+                        gint start, end;
+
+                        tag_name = mangle_name (id, i);
+                        /* fetch_pos returns start == -1 for groups that did
+                         * not participate in the match */
+                        if (gtk_text_tag_table_lookup (highlight_tag_table,
+                                                tag_name)
+                                        && g_match_info_fetch_pos (match_info,
+                                                i, &start, &end)
+                                        && start != -1) {
+                                w_string_add_tag (w_string, tag_name, start,
+                                                end);
+                        }
+                        g_free (tag_name);
                 }
-                // set the offset to the end of the whole match
-                offset = pmatch[1];
+                g_match_info_next (match_info, NULL);
         }
+
+        g_match_info_free (match_info);
 }
 
 void highlight_match (WString *w_string)
@@ -218,31 +219,29 @@ static void highlight_add_tags (guint id)
         }
 }
 
-static pcre *highlight_compile_regex (const char *string,
+static GRegex *highlight_compile_regex (const char *string,
 		gboolean case_sensitive)
 {
-	pcre *regex;
-	int flags;
-        const char *err;
-        int offset;
+	GRegex *regex;
+	GRegexCompileFlags flags;
+        GError *err = NULL;
 
         if (string == NULL || *string == '\0') {
                 return NULL;
         }
 
-        flags = PCRE_MULTILINE;
+        flags = G_REGEX_MULTILINE | G_REGEX_OPTIMIZE;
 
 	if (!case_sensitive) {
-		flags |= PCRE_CASELESS;
+		flags |= G_REGEX_CASELESS;
 	}
 
-        err = NULL;
-	regex = pcre_compile (string, flags, &err, &offset, NULL);
+	regex = g_regex_new (string, flags, 0, &err);
 
         if (regex == NULL) {
 		// TODO change the following into a dialog
-                g_warning ("Error compiling regex at character %d: %s\n",
-				offset, err);
+                g_warning ("Error compiling regex: %s\n", err->message);
+                g_error_free (err);
                 return NULL;
         }
 	return regex;
@@ -272,7 +271,11 @@ static void change_string (const char *key, gpointer user_data)
                         (highlight->id, PREF_HIGHLIGHT_STRING));
         case_sensitive = preferences_get_bool (preferences_get_highlight_key
                         (highlight->id, PREF_HIGHLIGHT_CASE_SENSITIVE));
+        if (highlight->regex != NULL) {
+                g_regex_unref (highlight->regex);
+        }
         highlight->regex = highlight_compile_regex (string, case_sensitive);
+        g_free (string);
 }
 
 static void highlight_remove_tags (guint id)
@@ -328,7 +331,7 @@ highlight_remove (GSList *highlight_link)
         debug ("removing element: %X\n", id);
 
         /* remove the notifications on this highlight */
-        for (cur = highlight->gconf_connections; cur != NULL;
+        for (cur = highlight->notify_connections; cur != NULL;
                         cur = cur->next) {
                 preferences_notify_remove (GPOINTER_TO_INT (cur->data));
         }
@@ -356,6 +359,12 @@ highlight_remove (GSList *highlight_link)
                         id);
         preferences_unset (key);
         g_free (key);
+
+        if (highlight->regex != NULL) {
+                g_regex_unref (highlight->regex);
+        }
+        g_slist_free (highlight->notify_connections);
+        g_free (highlight);
 }
 
 static void highlight_add (guint id)
@@ -374,41 +383,41 @@ static void highlight_add (guint id)
         highlight = g_new (WarlockHighlight, 1);
         highlight->id = id;
         highlight->regex = highlight_compile_regex (string, case_sensitive);
-        highlight->gconf_connections = NULL;
+        highlight->notify_connections = NULL;
 
         highlight_list = g_slist_append (highlight_list, highlight);
 
         highlight_add_tags (id);
 
-        highlight->gconf_connections = g_slist_append
-                (highlight->gconf_connections, GINT_TO_POINTER
+        highlight->notify_connections = g_slist_append
+                (highlight->notify_connections, GINT_TO_POINTER
                  (preferences_notify_add (preferences_get_highlight_key
                                           (id, PREF_HIGHLIGHT_STRING),
                                           change_string, highlight)));
-        highlight->gconf_connections = g_slist_append
-                (highlight->gconf_connections, GINT_TO_POINTER
+        highlight->notify_connections = g_slist_append
+                (highlight->notify_connections, GINT_TO_POINTER
                  (preferences_notify_add (preferences_get_highlight_key
                                           (id, PREF_HIGHLIGHT_CASE_SENSITIVE),
                                           change_string, highlight)));
 
         for (i = 0; i < HIGHLIGHT_MATCHES; i++) {
                 name = mangle_name (id, i);
-                highlight->gconf_connections = g_slist_append
-                        (highlight->gconf_connections, GINT_TO_POINTER
+                highlight->notify_connections = g_slist_append
+                        (highlight->notify_connections, GINT_TO_POINTER
                          (preferences_notify_add
                           (preferences_get_highlight_match_key
                            (id, i, PREF_HIGHLIGHT_MATCH_TEXT_COLOR),
                            changed_text, name)));
 
-                highlight->gconf_connections = g_slist_append
-                        (highlight->gconf_connections, GINT_TO_POINTER
+                highlight->notify_connections = g_slist_append
+                        (highlight->notify_connections, GINT_TO_POINTER
                          (preferences_notify_add
                           (preferences_get_highlight_match_key
                            (id, i, PREF_HIGHLIGHT_MATCH_BASE_COLOR),
                            changed_background, name)));
 
-                highlight->gconf_connections = g_slist_append
-                        (highlight->gconf_connections, GINT_TO_POINTER
+                highlight->notify_connections = g_slist_append
+                        (highlight->notify_connections, GINT_TO_POINTER
                          (preferences_notify_add
                           (preferences_get_highlight_match_key
                            (id, i, PREF_HIGHLIGHT_MATCH_FONT),

@@ -40,34 +40,6 @@ static const char *valid_directions[] = {
         "d", "do", "dow", "down",
 };
 
-GdkColor *
-gdk_color_from_string (const char *string)
-{
-        if (string == NULL || *string == '\0' || strcmp (string, "(null)") == 0
-			|| strcmp (string, "NONE") == 0) {
-		return NULL;
-	} else {
-		GdkColor *color;
-		color = g_new (GdkColor, 1);
-		if (gdk_color_parse (string, color)) {
-			return color;
-		} else {
-			return NULL;
-		}
-	}
-}
-
-char *
-gdk_color_to_string (const GdkColor *color)
-{
-        if (color == NULL) {
-                return NULL;
-        } else {
-                return g_strdup_printf ("#%04X%04X%04X", color->red,
-                                color->green, color->blue);
-        }
-}
-
 gboolean
 is_direction (const char *dir)
 {

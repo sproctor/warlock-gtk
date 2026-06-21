@@ -64,7 +64,7 @@ warlock_color_button_get_type (void)
                         (GInstanceInitFunc) warlock_color_button_init,
                 };
 
-                wcb_type = g_type_register_static (GTK_TYPE_HBOX,
+                wcb_type = g_type_register_static (GTK_TYPE_BOX,
                                 "warlock_color_button",
                                 &wcb_info,
                                 0);
@@ -151,7 +151,7 @@ warlock_color_button_color_changed (GtkColorButton *colorbutton,
 {
         GdkRGBA color;
 
-        gtk_color_button_get_rgba (colorbutton, &color);
+        gtk_color_chooser_get_rgba (GTK_COLOR_CHOOSER (colorbutton), &color);
         warlock_color_button_set_color (button, &color);
 
         g_signal_emit (G_OBJECT (button),
@@ -191,6 +191,9 @@ warlock_color_button_class_init (WarlockColorButtonClass *klass)
 static void
 warlock_color_button_init (WarlockColorButton *button)
 {
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (button),
+                        GTK_ORIENTATION_HORIZONTAL);
+
         button->check_button = gtk_check_button_new ();
         button->color_button = gtk_color_button_new ();
         button->active = FALSE;
@@ -222,7 +225,7 @@ warlock_color_button_set_color_real (WarlockColorButton *button,
         memcpy (button->color, color, sizeof (GdkRGBA));
         g_signal_handlers_block_matched (G_OBJECT (button->color_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);
-        gtk_color_button_set_rgba (GTK_COLOR_BUTTON (button->color_button),
+        gtk_color_chooser_set_rgba (GTK_COLOR_CHOOSER (button->color_button),
                         color);
         g_signal_handlers_unblock_matched (G_OBJECT (button->color_button),
                         G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, button);

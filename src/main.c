@@ -62,7 +62,6 @@ static void parse_arguments (int argc, char **argv)
 
         context = g_option_context_new ("- A Simutronics Wizard replacement");
         g_option_context_add_main_entries (context, entries, NULL);
-        g_option_context_add_group (context, gtk_get_option_group (TRUE));
         g_option_context_set_help_enabled (context, TRUE);
 
         err = NULL;
@@ -126,38 +125,31 @@ static void parse_arguments (int argc, char **argv)
         }
 }
 
-int main (int argc, char *argv[])
+static void
+warlock_activate (GApplication *application, gpointer user_data)
 {
-        GtkWidget *main_window = NULL;
+        GtkWidget *main_window;
         int width, height;
 	char *ui_xml_filename;
-	GError *err;
+	GError *err = NULL;
 
-#if 0
-#ifdef ENABLE_NLS
-        bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
-        bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-        textdomain (GETTEXT_PACKAGE);
-#endif
+        /* if we get activated again, just present the existing window */
+        if (warlock_xml != NULL) {
+                main_window = warlock_get_widget ("main_window");
+                gtk_window_present (GTK_WINDOW (main_window));
+                return;
+        }
 
-        gtk_set_locale ();
-#endif
-	if (!g_thread_supported ()) g_thread_init (NULL);
-        gdk_threads_init ();
-        GDK_THREADS_ENTER ();
-
-	// calls g_option_context_parse, which initializes gtk
-        parse_arguments (argc, argv);
-
-	// initialize gtk builder data
+	/* initialize gtk builder data */
 	ui_xml_filename = g_build_filename (PACKAGE_DATA_DIR, PACKAGE,
 			"warlock.ui", NULL);
-	err = NULL;
         warlock_xml = gtk_builder_new ();
 	if (!gtk_builder_add_from_file (warlock_xml, ui_xml_filename, &err)) {
 		g_warning ("Couldn't load builder file: %s", err->message);
 		g_error_free (err);
-		exit (1);
+		g_free (ui_xml_filename);
+		g_application_quit (application);
+		return;
 	}
 	g_free (ui_xml_filename);
 
@@ -166,33 +158,37 @@ int main (int argc, char *argv[])
         gtk_builder_connect_signals (warlock_xml, NULL);
 
         main_window = warlock_get_widget ("main_window");
+        gtk_application_add_window (GTK_APPLICATION (application),
+                        GTK_WINDOW (main_window));
 
-        /* read window width from config */
+        /* restore the window size from config */
         width = preferences_get_int (preferences_get_key (PREF_WINDOW_WIDTH));
-
-        /* read window height from config */
         height = preferences_get_int (preferences_get_key
                         (PREF_WINDOW_HEIGHT));
-
         gtk_window_set_default_size (GTK_WINDOW (main_window), width, height);
 
         gtk_widget_show (main_window);
 	warlock_connection_init ();
+}
 
-        gtk_main ();
+int main (int argc, char *argv[])
+{
+        int status;
 
-        /* save the height an width */
-        gtk_window_get_size (GTK_WINDOW (main_window), &width, &height);
-        preferences_set_int (preferences_get_key (PREF_WINDOW_WIDTH), width);
-        preferences_set_int (preferences_get_key (PREF_WINDOW_HEIGHT), height);
-        GDK_THREADS_LEAVE ();
+	// parse our command-line options into host/port/key and the .sal file
+        parse_arguments (argc, argv);
 
-        debug ("waiting for connection to close\n");
-        if (connection != NULL && connection->thread != NULL) {
-                g_thread_join (connection->thread);
-        }
+        warlock_app = gtk_application_new ("org.warlock.WarlockGtk",
+                        G_APPLICATION_NON_UNIQUE);
+        g_signal_connect (warlock_app, "activate",
+                        G_CALLBACK (warlock_activate), NULL);
 
-        return 0;
+        /* options are already parsed above; run the app with just argv[0] */
+        status = g_application_run (G_APPLICATION (warlock_app), 1, argv);
+
+        g_object_unref (warlock_app);
+
+        return status;
 }
 
 /************************************************************************
@@ -408,8 +404,8 @@ on_execute_menu_item_activate          (GtkMenuItem     *menuitem,
         file_chooser = gtk_file_chooser_dialog_new ("Select script to run",
                         GTK_WINDOW (warlock_get_widget ("main_window")),
                         GTK_FILE_CHOOSER_ACTION_OPEN,
-                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+                        "_Cancel", GTK_RESPONSE_CANCEL,
+                        "_Open", GTK_RESPONSE_ACCEPT,
                         NULL);
 
         key = preferences_get_key (PREF_SCRIPT_PATH);

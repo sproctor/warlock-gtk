@@ -34,6 +34,7 @@ typedef struct _SimuConnection SimuConnection;
 struct _SimuConnection {
         GThread *thread;
         GIOChannel *channel;
+        guint watch_id;
 
         const char *server;
         int port;

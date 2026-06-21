@@ -64,48 +64,85 @@ static int		 max_buffer_size = -1;
 static guint		 buffer_size_notification = 0;
 static gboolean		 prompting = FALSE;
 
+/* (re)build the CSS that styles a text view from the default colour/font
+ * preferences and load it into the per-widget provider */
 static void
-change_text_color (const char *key, gpointer user_data)
+warlock_view_apply_style (GtkWidget *text_view)
 {
-        GtkWidget *text_view;
-        GdkRGBA *color;
-
-        text_view = user_data;
-        color = preferences_get_color (key);
-	gtk_widget_override_color (text_view, GTK_STATE_NORMAL, color);
-}
-
-static void
-change_base_color (const char *key, gpointer user_data)
-{
-        GtkWidget *text_view;
-        GdkRGBA *color;
-
-        text_view = user_data;
-        color = preferences_get_color (key);
-	gtk_widget_override_background_color (text_view, GTK_STATE_NORMAL,
-			color);
-}
-
-static void
-change_font (const char *key, gpointer user_data)
-{
-        GtkWidget *text_view;
+        GtkCssProvider *provider;
+        GdkRGBA *fg, *bg;
         PangoFontDescription *font;
+        GString *css;
 
-        text_view = user_data;
-	font = preferences_get_font (key);
-	gtk_widget_override_font (text_view, font);
+        provider = g_object_get_data (G_OBJECT (text_view), "warlock-css");
+        if (provider == NULL) {
+                provider = gtk_css_provider_new ();
+                gtk_style_context_add_provider (
+                                gtk_widget_get_style_context (text_view),
+                                GTK_STYLE_PROVIDER (provider),
+                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                g_object_set_data_full (G_OBJECT (text_view), "warlock-css",
+                                provider, g_object_unref);
+        }
+
+        css = g_string_new ("textview, textview text {");
+
+        fg = preferences_get_color (preferences_get_key
+                        (PREF_DEFAULT_TEXT_COLOR));
+        if (fg != NULL) {
+                char *s = gdk_rgba_to_string (fg);
+                g_string_append_printf (css, " color: %s;", s);
+                g_free (s);
+                g_free (fg);
+        }
+
+        bg = preferences_get_color (preferences_get_key
+                        (PREF_DEFAULT_BASE_COLOR));
+        if (bg != NULL) {
+                char *s = gdk_rgba_to_string (bg);
+                g_string_append_printf (css, " background-color: %s;", s);
+                g_free (s);
+                g_free (bg);
+        }
+
+        font = preferences_get_font (preferences_get_key (PREF_DEFAULT_FONT));
+        if (font != NULL) {
+                const char *family = pango_font_description_get_family (font);
+                gint size = pango_font_description_get_size (font);
+
+                if (family != NULL) {
+                        g_string_append_printf (css, " font-family: \"%s\";",
+                                        family);
+                }
+                if (size > 0) {
+                        const char *unit =
+                                pango_font_description_get_size_is_absolute
+                                (font) ? "px" : "pt";
+                        g_string_append_printf (css, " font-size: %d%s;",
+                                        size / PANGO_SCALE, unit);
+                }
+                pango_font_description_free (font);
+        }
+
+        g_string_append (css, " }");
+
+        gtk_css_provider_load_from_data (provider, css->str, -1, NULL);
+
+        g_string_free (css, TRUE);
+}
+
+static void
+view_style_changed (const char *key, gpointer user_data)
+{
+        warlock_view_apply_style (user_data);
 }
 
 static void
 warlock_view_create_text_view (WarlockView *warlock_view)
 {
-        PangoFontDescription *font;
-        GdkRGBA *color;
         GtkTextIter iter;
 	GtkWidget *text_view;
-        
+
         text_view = gtk_text_view_new ();
         gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (text_view),
                         GTK_WRAP_WORD_CHAR);
@@ -121,46 +158,16 @@ warlock_view_create_text_view (WarlockView *warlock_view)
         warlock_view->mark = gtk_text_buffer_create_mark
                 (warlock_view->text_buffer, NULL, &iter, TRUE);
 
-        /* set the text color */
-        color = preferences_get_color (preferences_get_key
-                        (PREF_DEFAULT_TEXT_COLOR));
-        if (color == NULL) {
-                color = g_new (GdkRGBA, 1);
-                gdk_rgba_parse (color, "white");
-        }
-	gtk_widget_override_color (text_view, GTK_STATE_NORMAL, color);
-        g_free (color);
+        /* apply the default colours and font via CSS */
+        warlock_view_apply_style (text_view);
 
-        /* set the background color*/
-        color = preferences_get_color (preferences_get_key
-                        (PREF_DEFAULT_BASE_COLOR));
-        if (color == NULL) {
-                color = g_new (GdkRGBA, 1);
-                gdk_rgba_parse (color, "black");
-        }
-	gtk_widget_override_background_color (text_view, GTK_STATE_NORMAL,
-			color);
-        g_free (color);
-
-        /* set the font */
-        font = preferences_get_font (preferences_get_key (PREF_DEFAULT_FONT));
-        if (font == NULL) {
-                font = pango_font_description_from_string ("sans");
-        }
-	gtk_widget_override_font (text_view, font);
-
-        /* listen to gconf and change the text color when the gconf
-         * value changes */
+        /* restyle when any of the default colour/font preferences change */
         preferences_notify_add (preferences_get_key (PREF_DEFAULT_TEXT_COLOR),
-                        change_text_color, text_view);
-
-        /* listen for background change */
+                        view_style_changed, text_view);
         preferences_notify_add (preferences_get_key (PREF_DEFAULT_BASE_COLOR),
-                        change_base_color, text_view);
-
-        /* listen for font change */
+                        view_style_changed, text_view);
         preferences_notify_add (preferences_get_key (PREF_DEFAULT_FONT),
-                        change_font, text_view);
+                        view_style_changed, text_view);
 }
 
 // cut off the beginning lines if we have too many
@@ -476,15 +483,29 @@ echo_f (const char *fmt, ...)
 	g_free (str);
 }
 
-void
-echo (const char *str)
+/* runs on the main loop; takes ownership of the string */
+static gboolean
+echo_main (gpointer data)
 {
+        char *str = data;
         WString *wstr;
 
         wstr = w_string_new (str);
 
         w_string_add_tag (wstr, ECHO_TAG, 0, -1);
         view_append (main_view, wstr);
+
+        g_free (str);
+
+        return G_SOURCE_REMOVE;
+}
+
+void
+echo (const char *str)
+{
+        /* may be called from the script thread; do the UI work on the main
+         * loop (runs directly when already on the main thread) */
+        g_main_context_invoke (NULL, echo_main, g_strdup (str));
 }
 
 static WarlockView *

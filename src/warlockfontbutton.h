@@ -38,7 +38,7 @@ typedef struct _WarlockFontButton      WarlockFontButton;
 typedef struct _WarlockFontButtonClass WarlockFontButtonClass;
 
 struct _WarlockFontButton {
-        GtkHBox         box;
+        GtkBox          box;
 
         gboolean        active;
         char*           font;
@@ -47,7 +47,7 @@ struct _WarlockFontButton {
 };
 
 struct _WarlockFontButtonClass {
-        GtkHBoxClass parent_class;
+        GtkBoxClass parent_class;
 
         void (* warlock_font_button) (WarlockFontButton *wcb);
 };

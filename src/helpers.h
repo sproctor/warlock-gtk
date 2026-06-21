@@ -19,8 +19,6 @@
 #ifndef _HELPERS_H
 #define _HELPERS_H
 
-GdkColor *gdk_color_from_string (const char *string);
-char *gdk_color_to_string (const GdkColor *color);
 gboolean is_direction (const char *dir);
 void assure_directory (const char *dir);
 

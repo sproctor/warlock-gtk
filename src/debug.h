@@ -30,9 +30,4 @@
         if (err != NULL) g_warning ("** " __FILE__ ":%d - Error %d: %s\n", \
                         __LINE__, err->code, err->message)
 
-#define print_gconf_error(err, key) \
-        if (err != NULL) g_warning ("** " __FILE__ ":%d - Key: %s - " \
-                        "Error %d: %s\n", __LINE__, key, err->code, \
-                        err->message)
-
 #endif
